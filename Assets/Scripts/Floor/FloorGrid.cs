@@ -91,11 +91,12 @@ namespace GridNameSpace
 		{
 
 
-			height = Mathf.RoundToInt(X / nodeSize);
-			width = Mathf.RoundToInt(Y / nodeSize);
+			width = Mathf.RoundToInt(X / nodeSize);
+			height = Mathf.RoundToInt(Y / nodeSize);
+			Debug.Log($"grid {width},{height}");
 			nodeSize = Nodesize;
 			nodeRadius = nodeSize / 2;
-			nodes = new Node[width, height];
+			nodes = new Node[height, width];
 			this.floor = floor;
 			generateNodes();
 
@@ -194,8 +195,7 @@ namespace GridNameSpace
 		}
 		void generateNodes()
 		{
-
-			buttonLeft = floor.transform.position - (Vector3.right * width / 2) - (Vector3.forward * height / 2);
+			buttonLeft = floor.transform.position - (Vector3.right * floor.transform.localScale.x) / 2 - (Vector3.forward * floor.transform.localScale.z) / 2;
 			buttonLeft += new Vector3((float)nodeSize / 2, floor.transform.localScale.y / 2, (float)nodeSize / 2);
 			Debug.DrawLine(buttonLeft, buttonLeft + Vector3.up * 2, Color.yellow);
 			//initialize graph

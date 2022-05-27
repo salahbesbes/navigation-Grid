@@ -6,25 +6,24 @@ using UnityEngine;
 public class Floor : MonoBehaviour
 {
 
+	[Tooltip("By changing the scale of the platform we change the Grid Size")]
 	public LayerMask NodelinkLayer;
 	public LayerMask floorLayer;
 
 	public FloorGrid grid;
-	[Range(2f, 100f)]
-	public int X = 2;
-
-	[Range(2f, 100f)]
-	public int Y = 2;
 
 	public Transform parentCanvas;
 	public GameObject prefab;
 	[HideInInspector]
 	public List<NodeLink> nodeLinks = new List<NodeLink>();
-
+	private int X = 2;
+	private int Y = 2;
 
 	void Start()
 	{
-		grid = new FloorGrid(X, Y, this, 1);
+		X = (int)transform.localScale.x;
+		Y = (int)transform.localScale.z;
+		grid = new FloorGrid(Y, X, this, 1);
 		//Debug.Log($"we init grid of {transform.name}");
 
 		//foreach (Node node in grid.nodes)
@@ -33,13 +32,19 @@ public class Floor : MonoBehaviour
 		//	newobj.transform.GetChild(0).GetComponent<Text>().text = $"{node.X},{node.Y}";
 
 		//}
+
+		Debug.Log($"{grid.nodes.Length}");
+		foreach (var item in grid.nodes)
+		{
+			Debug.Log($"[{item.X},{item.Y}]");
+		}
 		CheckForLinks();
 
 	}
 
 	private void OnValidate()
 	{
-		grid = new FloorGrid(X, Y, this, 1);
+		//grid = new FloorGrid(X, Y, this, 1);
 		//CheckForLinks();
 	}
 
@@ -47,9 +52,9 @@ public class Floor : MonoBehaviour
 
 	public void CheckForLinks()
 	{
-		for (int i = 0; i < grid.width; i++)
+		for (int i = 0; i < grid.height; i++)
 		{
-			for (int j = 0; j < grid.height; j++)
+			for (int j = 0; j < grid.width; j++)
 			{
 				Node curentNode = grid.nodes[i, j];
 				Collider[] hits = Physics.OverlapSphere(curentNode.LocalCoord + Vector3.up * 0.2f, 0.2f, NodelinkLayer);
@@ -107,15 +112,22 @@ public class Floor : MonoBehaviour
 
 	private async void OnDrawGizmos()
 	{
-		Vector3 buttonLeft = transform.position - (Vector3.right * X / 2) - (Vector3.forward * Y / 2);
+
+
+		X = (int)transform.localScale.x;
+		Y = (int)transform.localScale.z;
+		Vector3 buttonLeft = transform.position - (Vector3.right * X) / 2 - (Vector3.forward * Y) / 2;
+
+
+
 		buttonLeft += new Vector3(0, transform.localScale.y / 2, 0);
 		Debug.DrawLine(buttonLeft, buttonLeft + Vector3.up * 2, Color.yellow);
 
-		for (int x = 0; x < X; x++)
+		for (int x = 0; x < Y; x++)
 		{
 			Debug.DrawLine(buttonLeft + new Vector3(0, 0, x), new Vector3(X + buttonLeft.x, buttonLeft.y, (x + buttonLeft.z)), Color.black);
 		}
-		for (int x = 0; x < Y; x++)
+		for (int x = 0; x < X; x++)
 		{
 			Debug.DrawLine(buttonLeft + new Vector3(x, 0, 0), new Vector3(x + buttonLeft.x, buttonLeft.y, (Y + buttonLeft.z)), Color.black);
 		}
@@ -142,9 +154,9 @@ public class Floor : MonoBehaviour
 		Vector3 offset = new Vector3(0, 0.2f, 0);
 
 
-		for (int i = 0; i < grid.width; i++)
+		for (int i = 0; i < grid.height; i++)
 		{
-			for (int j = 0; j < grid.height; j++)
+			for (int j = 0; j < grid.width; j++)
 			{
 				Gizmos.DrawSphere(grid.nodes[i, j].LocalCoord + Vector3.up * 0.2f, 0.2f);
 

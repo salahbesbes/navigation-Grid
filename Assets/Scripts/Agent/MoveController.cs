@@ -133,7 +133,6 @@ public class MoveController : MonoBehaviour
 		StopCoroutine(Move());
 		// how to know if we want to move to nodeLink Destination or
 		// we just came from some other floor and want to move to real Destination
-		Debug.Log($"{crossing}");
 		Link link = other.transform.GetComponentInParent<Link>();
 		//Debug.Log($"we hit {other.name} with the link {link.name}");
 		if (nodelink.node.grid == floor.grid && crossing == null)
@@ -153,7 +152,7 @@ public class MoveController : MonoBehaviour
 			floor = nodelink.node.grid.floor;
 			nodelink = nodelink.Destiation;
 			curentPositon = nodelink.Destiation.node;
-			Debug.Log($"we are on node {curentPositon} in the new Floor {floor} and want to  move to newGrid[{destinationX},{destinationY}] (manual set) ");
+			//Debug.Log($"we are on node {curentPositon} in the new Floor {floor} and want to  move to newGrid[{destinationX},{destinationY}] (manual set) ");
 
 			destination = floor.grid.nodes[destinationX, destinationY];
 			path.Clear();
