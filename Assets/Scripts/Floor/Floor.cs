@@ -1,4 +1,5 @@
 using GridNameSpace;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -17,7 +18,8 @@ public class Floor : MonoBehaviour
 
 	public Transform parentCanvas;
 	public GameObject prefab;
-	private NodeLink nodeLink;
+	[HideInInspector]
+	public List<NodeLink> nodeLinks = new List<NodeLink>();
 
 
 	void Start()
@@ -42,6 +44,7 @@ public class Floor : MonoBehaviour
 	}
 
 
+
 	public void CheckForLinks()
 	{
 		for (int i = 0; i < grid.width; i++)
@@ -50,12 +53,16 @@ public class Floor : MonoBehaviour
 			{
 				Node curentNode = grid.nodes[i, j];
 				Collider[] hits = Physics.OverlapSphere(curentNode.LocalCoord + Vector3.up * 0.2f, 0.2f, NodelinkLayer);
-				if (hits.Length > 0 && nodeLink == null)
+				if (hits.Length > 0)
 				{
 					Collider firstColliderHit = hits[0];
-					nodeLink = firstColliderHit.transform.GetComponent<NodeLink>();
+					NodeLink nodeLink = firstColliderHit.transform.GetComponent<NodeLink>();
 					nodeLink.node = curentNode;
 					nodeLink.floor = this;
+					if (!nodeLinks.Contains(nodeLink))
+					{
+						nodeLinks.Add(nodeLink);
+					}
 					//grid.nodes[i, j].isNodeLink = true;
 					//Debug.DrawLine(curentNode.LocalCoord, curentNode.LocalCoord + Vector3.up, Color.red);
 					//// get the first collider hit

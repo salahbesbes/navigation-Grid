@@ -103,7 +103,7 @@ namespace GridNameSpace
 		}
 
 
-		public List<int> GetNodeCoord(out int destinationX, out int destinationY, Camera cam = null)
+		public void GetNodeCoord(out int destinationX, out int destinationY, Camera cam = null)
 		{
 			if (cam == null) cam = Camera.main;
 			Ray ray = cam.ScreenPointToRay(Input.mousePosition);
@@ -136,12 +136,11 @@ namespace GridNameSpace
 
 					destinationX = indexX;
 					destinationY = indexY;
-					return new List<int>() { indexX, indexY };
+					return;
 				}
 			}
 			destinationX = -1;
 			destinationY = -1;
-			return null;
 		}
 		public Node GetNode(int X, int Y)
 		{
