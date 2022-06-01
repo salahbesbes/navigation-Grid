@@ -63,7 +63,7 @@ public static class FindPath
 
 		}
 
-		Debug.Log($"cant find path in the map ");
+		Debug.Log($"cant find path in the map  current pos {startNode} des  is {destination}");
 		return res;
 
 	}
@@ -255,13 +255,17 @@ public static class FindPath
 
 			oldDirection = directionNew;
 		}
-		Vector3 lastNodeCoord = path[path.Count - 1].LocalCoord;
-		if (wayPoints.Contains(lastNodeCoord) == false)
+		if (path.Count > 0)
 		{
-			wayPoints.Add(lastNodeCoord);
+
+			Vector3 lastNodeCoord = path[path.Count - 1].LocalCoord;
+			if (wayPoints.Contains(lastNodeCoord) == false)
+			{
+				wayPoints.Add(lastNodeCoord);
+			}
+			// remove the first position where the player is sitting
+			wayPoints.RemoveAt(0);
 		}
-		// remove the first position where the player is sitting
-		wayPoints.RemoveAt(0);
 
 		return wayPoints;
 	}

@@ -42,7 +42,7 @@ namespace GridNameSpace
 	public class AStarNode
 	{
 		[NonSerialized]
-		public List<AStarNode> neighbours;
+		public List<Node> neighbours;
 		[NonSerialized]
 		public List<Node> path;
 		[NonSerialized]
@@ -57,7 +57,7 @@ namespace GridNameSpace
 
 		public AStarNode()
 		{
-			neighbours = new List<AStarNode>();
+			neighbours = new List<Node>();
 			path = new List<Node>();
 
 		}
@@ -246,7 +246,13 @@ namespace GridNameSpace
 
 
 
-
+		public void Reset()
+		{
+			foreach (Node node in nodes)
+			{
+				node.Reset();
+			}
+		}
 
 	}
 

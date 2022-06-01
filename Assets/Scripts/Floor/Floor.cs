@@ -9,6 +9,7 @@ public class Floor : MonoBehaviour
 	[Tooltip("By changing the scale of the platform we change the Grid Size")]
 	public LayerMask NodelinkLayer;
 	public LayerMask floorLayer;
+	public LayerMask ObstacleLayer;
 
 	public FloorGrid grid;
 
@@ -33,12 +34,10 @@ public class Floor : MonoBehaviour
 
 		//}
 
-		Debug.Log($"{grid.nodes.Length}");
-		foreach (var item in grid.nodes)
-		{
-			Debug.Log($"[{item.X},{item.Y}]");
-		}
+		//Debug.Log($"{grid.nodes.Length}");
 		CheckForLinks();
+		CheckForObstacles();
+
 
 	}
 
@@ -48,7 +47,24 @@ public class Floor : MonoBehaviour
 		//CheckForLinks();
 	}
 
+	public void CheckForObstacles()
+	{
+		for (int i = 0; i < grid.height; i++)
+		{
+			for (int j = 0; j < grid.width; j++)
+			{
+				Node curentNode = grid.nodes[i, j];
+				Collider[] hits = Physics.OverlapSphere(curentNode.LocalCoord + Vector3.up * 0.2f, 0.2f, ObstacleLayer);
+				if (hits.Length > 0)
+				{
+					grid.nodes[i, j].isObstacle = true;
+				}
 
+
+
+			}
+		}
+	}
 
 	public void CheckForLinks()
 	{
@@ -68,19 +84,12 @@ public class Floor : MonoBehaviour
 					{
 						nodeLinks.Add(nodeLink);
 					}
-					//grid.nodes[i, j].isNodeLink = true;
-					//Debug.DrawLine(curentNode.LocalCoord, curentNode.LocalCoord + Vector3.up, Color.red);
-					//// get the first collider hit
-					////Debug.Log($"found NodeLayer at {curentNode} with name {firstColliderHit.transform.name} in the Grid {grid.floor.name}");
-					//Link link = firstColliderHit.transform.GetComponentInParent<Link>();
-					//if (link != null)
-					//{
-					//	grid.nodes[i, j].isNodeLink = true;
-					//	NodeLink nodeLink = curentNode.CreateNodeLink(link);
-					//	link.AddNode(nodeLink);
-					//}
+
 
 				}
+
+
+
 			}
 		}
 	}
@@ -92,10 +101,8 @@ public class Floor : MonoBehaviour
 		//if (grid == null || grid.nodes == null) return;
 
 		CheckForLinks();
-		foreach (Node node in grid.nodes)
-		{
-			node.Reset();
-		}
+		CheckForObstacles();
+		grid.Reset();
 	}
 
 
@@ -159,6 +166,12 @@ public class Floor : MonoBehaviour
 			for (int j = 0; j < grid.width; j++)
 			{
 				Gizmos.DrawSphere(grid.nodes[i, j].LocalCoord + Vector3.up * 0.2f, 0.2f);
+
+				if (grid.nodes[i, j].isObstacle)
+				{
+					Gizmos.DrawLine(grid.nodes[i, j].LocalCoord + Vector3.up * 0.2f, grid.nodes[i, j].LocalCoord + Vector3.up * 1.5f);
+
+				}
 
 
 			}

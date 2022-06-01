@@ -17,6 +17,7 @@ public class MoveController : MonoBehaviour
 	private int destinationX;
 	private int destinationY;
 	NodeLink nodeLink;
+	public Transform Enemy;
 	void Start()
 	{
 		agent = GetComponent<NavMeshAgent>();
@@ -26,15 +27,33 @@ public class MoveController : MonoBehaviour
 		// approaches a destination point).
 
 	}
-
+	public void StartMoving(Node destination)
+	{
+		curentPositon = floor.grid.GetNode(transform);
+		path = FindPath.getPathToDestination(curentPositon, destination);
+		if (path.Count == 0)
+		{
+			Debug.Log($"path.count is 0 we wont move");
+			return;
+		}
+		wordSpacePath = FindPath.createWayPointOriginal(path);
+		//Debug.Log($"{wordSpacePath.Count}");
+		StartCoroutine(Move());
+	}
 
 	private void Update()
 	{
 		curentPositon = floor.grid.GetNode(transform);
-		Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-		Debug.DrawRay(ray.origin, ray.direction, Color.black);
-		if (Input.GetMouseButtonDown(0))
+		if (agent.name == "player")
 		{
+			transform.LookAt(Enemy);
+		}
+
+		if (Input.GetMouseButtonDown(0) && agent.name == "player")
+		{
+
+
+
 			Floor newFloor = GetFloorPressed();
 			if (newFloor != floor)
 			{
@@ -46,31 +65,43 @@ public class MoveController : MonoBehaviour
 			if (pressedOnDifferentFloor)
 			{
 				newFloor.grid.GetNodeCoord(out destinationX, out destinationY);
+				if (destinationX >= 0 && destinationY >= 0)
+				{
+					if (newFloor.grid.GetNode(destinationX, destinationY).isObstacle)
+					{
+						Debug.Log($"you clicked on obstacle");
+						return;
+					}
+				}
 
 				nodeLink = ClosestNodeLinkAvailable();
 				destination = nodeLink.node;
 				if (destination != null)
 				{
-					path.Clear();
-					path = FindPath.getPathToDestination(curentPositon, destination);
-					wordSpacePath = FindPath.createWayPointOriginal(path);
-					StartCoroutine(Move());
+					StartMoving(destination);
+
 				}
 
 			}
 			else
 			{
 				floor.grid.GetNodeCoord(out destinationX, out destinationY);
+				if (destinationX >= 0 && destinationY >= 0)
+				{
+					if (floor.grid.GetNode(destinationX, destinationY).isObstacle)
+					{
+						Debug.Log($"you clicked on obstacle");
+						return;
+					}
+				}
+
+
 
 				destination = floor.grid.GetNode(destinationX, destinationY);
 
 				if (destination != null)
 				{
-
-					path.Clear();
-					path = FindPath.getPathToDestination(curentPositon, destination);
-					wordSpacePath = FindPath.createWayPointOriginal(path);
-					StartCoroutine(Move());
+					StartMoving(destination);
 				}
 
 
@@ -165,13 +196,13 @@ public class MoveController : MonoBehaviour
 
 	private IEnumerator RunScenario(int Index)
 	{
-		Vector3 startPosition = agent.transform.position;
-
 		agent.SetDestination(wordSpacePath[Index]);
-
 		yield return new WaitUntil(() =>
 		{
-			return Vector3.Distance(wordSpacePath[Index] + Vector3.up * agent.baseOffset, agent.transform.position) < agent.radius;
+
+			//Debug.Log($"index {Index} distance ={Vector3.Distance(wordSpacePath[Index] + Vector3.up * agent.baseOffset, agent.transform.position)} agen radius {agent.radius}  comp is {Vector3.Distance(wordSpacePath[Index] + Vector3.up * agent.baseOffset, agent.transform.position) <= agent.radius}");
+
+			return Vector3.Distance(wordSpacePath[Index] + Vector3.up * agent.baseOffset, agent.transform.position) <= agent.radius;
 		});
 		yield return new WaitForSeconds(0.1f);
 
@@ -194,9 +225,10 @@ public class MoveController : MonoBehaviour
 		for (int i = 0; i < wordSpacePath.Count; i++)
 		{
 			yield return StartCoroutine(RunScenario(i));
+			//agent.SetDestination(wordSpacePath[i]);
 			yield return new WaitUntil(() =>
 			{
-				return Vector3.Distance(wordSpacePath[i] + Vector3.up * agent.baseOffset, agent.transform.position) < agent.radius;
+				return Vector3.Distance(wordSpacePath[i] + Vector3.up * agent.baseOffset, agent.transform.position) <= agent.radius;
 			});
 			yield return new WaitForSeconds(pauseTime);
 		}
