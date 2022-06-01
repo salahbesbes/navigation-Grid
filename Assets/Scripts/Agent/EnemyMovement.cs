@@ -4,163 +4,6 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
 
-public enum CoverType
-{
-	None,
-	Small,
-	Destructable,
-	Thick,
-}
-class CoverNode
-{
-	public CoverTransform CoverTransform;
-	public Node node;
-	public float Value;
-	public float DistanceToPlayer;
-	public bool InMovementRange = true;
-	private bool _available = false;
-	public bool Available
-	{
-		get => _available;
-		set => _available = value;
-	}
-
-
-
-	public void CalculateDistanceToPlayer(MoveController Player)
-	{
-		if (Player.curentPositon == null)
-		{
-			Player.curentPositon = Player.floor.grid.GetNode(Player.transform);
-		}
-		DistanceToPlayer = Vector3.Distance(node.LocalCoord, Player.curentPositon.LocalCoord);
-	}
-
-	public CoverNode(Node node, CoverTransform CoverTransform)
-	{
-		this.node = node;
-		this.CoverTransform = CoverTransform;
-
-	}
-}
-
-class CoverTransform : Node
-{
-
-	public List<CoverNode> _coverList = new List<CoverNode>();
-	public List<CoverNode> CoverList { get { return _coverList; } }
-	public string name = "default";
-	public int id = 0;
-	public Transform CoverPosition;
-	public CoverType type;
-	public float height;
-	public CoverNode BestCoverAvailable { get; set; }
-
-	public CoverTransform(Vector3 localCoord, int x, int y, FloorGrid grid, Transform transform) : base(localCoord, x, y, grid)
-	{
-		name = transform.name;
-		id = transform.GetInstanceID();
-		CoverPosition = transform;
-		//float volume = transform.localScale.x * transform.localScale.z * transform.localScale.y;
-		if (transform.localScale.x < 0.5f || transform.localScale.z < 0.5f)
-		{
-			type = CoverType.Small;
-		}
-		else
-		{
-			type = CoverType.Thick;
-		}
-		height = transform.transform.localScale.y;
-	}
-
-
-	public void CreatePotentialCover(CoverNode StartNode, List<Node> alreadyDone)
-	{
-
-		if (alreadyDone == null)
-		{
-			alreadyDone = new List<Node>();
-		}
-		Vector3 offset = Vector3.up * 0.2f;
-		if (StartNode.node.isObstacle)
-		{
-
-			foreach (Node node in StartNode.node.neighbours)
-			{
-				if (!alreadyDone.Contains(node) && node.isObstacle == false)
-				{
-					CoverNode newCover = new CoverNode(node, StartNode.CoverTransform);
-					CreatePotentialCover(newCover, alreadyDone);
-
-				}
-			}
-			return;
-		}
-
-		bool potentialcoverExist = false;
-
-		Vector3[] directions = new Vector3[4] { Vector3.forward, Vector3.back, Vector3.right, Vector3.left };
-		foreach (Vector3 dir in directions)
-		{
-			Ray ray = new Ray(StartNode.node.LocalCoord + offset, dir);
-			if (Physics.SphereCast(ray, 0.25f, out RaycastHit hit, 1f, grid.floor.ObstacleLayer))
-			{
-				if (hit.transform.GetInstanceID() == id)
-				{
-					//Debug.Log($" {StartNode} is added");
-					CoverList.Add(StartNode);
-					//UpdateBestCover();
-					alreadyDone.Add(StartNode.node);
-					potentialcoverExist = true;
-				}
-			}
-
-		}
-
-
-
-
-		if (potentialcoverExist == false)
-		{
-			return;
-		}
-
-
-		foreach (Node node in StartNode.node.neighbours)
-		{
-			if (!alreadyDone.Contains(node))
-			{
-				CoverNode newCover = new CoverNode(node, StartNode.CoverTransform);
-				CreatePotentialCover(newCover, alreadyDone);
-			}
-		}
-
-
-	}
-
-	public void UpdateBestCover()
-	{
-		if (CoverList?.Count == 0)
-		{
-			BestCoverAvailable = null;
-			return;
-		}
-
-		CoverNode[] AvailableCovers = (from cover in CoverList
-					       where cover != null && cover.Available && cover.InMovementRange
-					       select cover).ToArray();
-		//Array.Sort(AvailableCovers, new CoverType[3] { CoverType.Thick, CoverType.Destructable, CoverType.Small });
-
-		AvailableCovers = AvailableCovers.OrderByDescending(cover => cover.Value)
-						.OrderBy(cover => cover.DistanceToPlayer).ToArray();
-
-		// return 
-		BestCoverAvailable = AvailableCovers[0];
-
-
-	}
-}
-
 
 
 [RequireComponent(typeof(NavMeshAgent))]
@@ -203,7 +46,7 @@ public class EnemyMovement : MonoBehaviour
 		UpdateAvailableCover();
 		CoverNode perfectCover = GetPerfectCover(coverTransforms);
 		Debug.Log($"perfect node {perfectCover?.node}");
-		Instantiate(controller.floor.prefab, perfectCover.node.LocalCoord + Vector3.up * 2, Quaternion.identity);
+		Instantiate(controller.floor.prefab, perfectCover.node.LocalCoord + Vector3.up, Quaternion.identity).GetComponent<Renderer>().material.color = Color.yellow;
 	}
 
 	private CoverNode GetPerfectCover(HashSet<CoverTransform> coverTransforms)
@@ -221,7 +64,11 @@ public class EnemyMovement : MonoBehaviour
 		foreach (CoverTransform cover in SortedCoverTransforms)
 		{
 			bestNodesOfTtransforms.Add(cover.BestCoverAvailable);
-			Instantiate(controller.floor.prefab, cover.BestCoverAvailable.node.LocalCoord + Vector3.up, Quaternion.identity);
+			if (cover.BestCoverAvailable != null)
+			{
+				Instantiate(controller.floor.prefab, cover.BestCoverAvailable.node.LocalCoord + Vector3.up * 0.5f, Quaternion.identity);
+
+			}
 
 		}
 
@@ -254,8 +101,6 @@ public class EnemyMovement : MonoBehaviour
 		{
 			if (NavMesh.SamplePosition(Colliders[i].transform.position - (Player.position - Colliders[i].transform.position).normalized, out NavMeshHit hit, 2f, Agent.areaMask))
 			{
-
-
 				if (NavMesh.FindClosestEdge(hit.position, out hit, Agent.areaMask))
 				{
 					// cover first Cover than create all potential Cover aroyn the CoverTransform
@@ -267,9 +112,6 @@ public class EnemyMovement : MonoBehaviour
 				}
 			}
 		}
-
-
-
 
 	}
 	public void HandleGainSight(Transform Target)
@@ -296,48 +138,6 @@ public class EnemyMovement : MonoBehaviour
 		transform.LookAt(Player);
 	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	//public List<Node> covers = new List<Node>();
-
-
-
-	public int ColliderArraySortComparer(Collider A, Collider B)
-	{
-		if (A == null && B != null)
-		{
-			return 1;
-		}
-		else if (A != null && B == null)
-		{
-			return -1;
-		}
-		else if (A == null && B == null)
-		{
-			return 0;
-		}
-		else
-		{
-			return Vector3.Distance(Agent.transform.position, A.transform.position).CompareTo(Vector3.Distance(Agent.transform.position, B.transform.position));
-		}
-	}
 
 	public void UpdateAvailableCover()
 	{
@@ -440,7 +240,7 @@ public class EnemyMovement : MonoBehaviour
 			Gizmos.color = Color.grey;
 
 			Gizmos.color = Color.magenta;
-			Gizmos.DrawLine(Player.position, CoverPos.CoverPosition.position);
+			//Gizmos.DrawLine(Player.position, CoverPos.CoverPosition.position);
 
 			//Debug.Log($" {CoverPos.name} {CoverPos}");
 			foreach (CoverNode coverNode in CoverPos.CoverList)
@@ -466,9 +266,9 @@ public class EnemyMovement : MonoBehaviour
 				dir3.y = dir2.y;
 				float dot = Vector3.Dot(dir2, dir3);
 				Gizmos.color = Color.black;
-				Gizmos.DrawRay(CoverPos.CoverPosition.position, dir2 * 1.5f);
+				//Gizmos.DrawRay(CoverPos.CoverPosition.position, dir2 * 1.5f);
 
-				Gizmos.DrawLine(coverNode.node.LocalCoord, CoverPos.CoverPosition.position);
+				//Gizmos.DrawLine(coverNode.node.LocalCoord, CoverPos.CoverPosition.position);
 
 				if (dot > 0 && dot <= 0.01f)
 					dot *= -1;

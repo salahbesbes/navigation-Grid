@@ -1,9 +1,167 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace GridNameSpace
 {
+	public enum CoverType
+	{
+		None,
+		Small,
+		Destructable,
+		Thick,
+	}
+	class CoverNode
+	{
+		public CoverTransform CoverTransform;
+		public Node node;
+		public float Value;
+		public float DistanceToPlayer;
+		public bool InMovementRange = true;
+		private bool _available = false;
+		public bool Available
+		{
+			get => _available;
+			set => _available = value;
+		}
+
+
+
+		public void CalculateDistanceToPlayer(MoveController Player)
+		{
+			if (Player.curentPositon == null)
+			{
+				Player.curentPositon = Player.floor.grid.GetNode(Player.transform);
+			}
+			DistanceToPlayer = Vector3.Distance(node.LocalCoord, Player.curentPositon.LocalCoord);
+		}
+
+		public CoverNode(Node node, CoverTransform CoverTransform)
+		{
+			this.node = node;
+			this.CoverTransform = CoverTransform;
+
+		}
+	}
+
+	class CoverTransform : Node
+	{
+
+		public List<CoverNode> _coverList = new List<CoverNode>();
+		public List<CoverNode> CoverList { get { return _coverList; } }
+		public string name = "default";
+		public int id = 0;
+		public Transform CoverPosition;
+		public CoverType type;
+		public float height;
+		public CoverNode BestCoverAvailable { get; set; }
+
+		public CoverTransform(Vector3 localCoord, int x, int y, FloorGrid grid, Transform transform) : base(localCoord, x, y, grid)
+		{
+			name = transform.name;
+			id = transform.GetInstanceID();
+			CoverPosition = transform;
+			//float volume = transform.localScale.x * transform.localScale.z * transform.localScale.y;
+			if (transform.localScale.x < 0.5f || transform.localScale.z < 0.5f)
+			{
+				type = CoverType.Small;
+			}
+			else
+			{
+				type = CoverType.Thick;
+			}
+			height = transform.transform.localScale.y;
+		}
+
+
+		public void CreatePotentialCover(CoverNode StartNode, List<Node> alreadyDone)
+		{
+
+			if (alreadyDone == null)
+			{
+				alreadyDone = new List<Node>();
+			}
+			Vector3 offset = Vector3.up * 0.2f;
+			if (StartNode.node.isObstacle)
+			{
+
+				foreach (Node node in StartNode.node.neighbours)
+				{
+					if (!alreadyDone.Contains(node) && node.isObstacle == false)
+					{
+						CoverNode newCover = new CoverNode(node, StartNode.CoverTransform);
+						CreatePotentialCover(newCover, alreadyDone);
+
+					}
+				}
+				return;
+			}
+
+			bool potentialcoverExist = false;
+
+			Vector3[] directions = new Vector3[4] { Vector3.forward, Vector3.back, Vector3.right, Vector3.left };
+			foreach (Vector3 dir in directions)
+			{
+				Ray ray = new Ray(StartNode.node.LocalCoord + offset, dir);
+				if (Physics.SphereCast(ray, 0.25f, out RaycastHit hit, 1f, grid.floor.ObstacleLayer))
+				{
+					if (hit.transform.GetInstanceID() == id)
+					{
+						//Debug.Log($" {StartNode} is added");
+						CoverList.Add(StartNode);
+						//UpdateBestCover();
+						alreadyDone.Add(StartNode.node);
+						potentialcoverExist = true;
+					}
+				}
+
+			}
+
+
+
+
+			if (potentialcoverExist == false)
+			{
+				return;
+			}
+
+
+			foreach (Node node in StartNode.node.neighbours)
+			{
+				if (!alreadyDone.Contains(node))
+				{
+					CoverNode newCover = new CoverNode(node, StartNode.CoverTransform);
+					CreatePotentialCover(newCover, alreadyDone);
+				}
+			}
+
+
+		}
+
+		public void UpdateBestCover()
+		{
+			if (CoverList?.Count == 0)
+			{
+				BestCoverAvailable = null;
+				return;
+			}
+
+			CoverNode[] AvailableCovers = (from cover in CoverList
+						       where cover != null && cover.Available && cover.InMovementRange
+						       select cover).ToArray();
+			//Array.Sort(AvailableCovers, new CoverType[3] { CoverType.Thick, CoverType.Destructable, CoverType.Small });
+
+			AvailableCovers = AvailableCovers.OrderByDescending(cover => cover.Value)
+							.OrderBy(cover => cover.DistanceToPlayer).ToArray();
+
+			// return 
+			BestCoverAvailable = AvailableCovers[0];
+
+
+		}
+	}
+
 
 	public class Node : AStarNode
 	{

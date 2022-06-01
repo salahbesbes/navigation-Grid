@@ -165,11 +165,11 @@ public class Floor : MonoBehaviour
 		{
 			for (int j = 0; j < grid.width; j++)
 			{
-				Gizmos.DrawSphere(grid.nodes[i, j].LocalCoord + Vector3.up * 0.2f, 0.2f);
+				//Gizmos.DrawSphere(grid.nodes[i, j].LocalCoord + Vector3.up * 0.2f, 0.2f);
 
 				if (grid.nodes[i, j].isObstacle)
 				{
-					Gizmos.DrawLine(grid.nodes[i, j].LocalCoord + Vector3.up * 0.2f, grid.nodes[i, j].LocalCoord + Vector3.up * 1.5f);
+					//Gizmos.DrawLine(grid.nodes[i, j].LocalCoord + Vector3.up * 0.2f, grid.nodes[i, j].LocalCoord + Vector3.up * 1.5f);
 
 				}
 
