@@ -188,7 +188,7 @@ public class EnemyMovementEditor : Editor
 			Debug.Log($"stepcount {i}");
 			float angle = movement.transform.eulerAngles.y - (360 / 2) + stepAngleSize * i;
 			Debug.Log($"stepAngleSize {stepAngleSize}");
-			ViewCastInfo newViewCast = ViewCast(angle, movement.Target, movement.HidableLayers);
+			ViewCastInfo newViewCast = ViewCast(angle, movement.Player, movement.HidableLayers);
 
 			viewPoints.Add(newViewCast);
 		}

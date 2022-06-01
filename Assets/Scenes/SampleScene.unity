@@ -2898,7 +2898,7 @@ MonoBehaviour:
   MinObstacleHeight: 0.15
   UpdateFrequency: 0.5
   controller: {fileID: 2118781295}
-  Target: {fileID: 729112433}
+  Target: {fileID: 729112434}
   offset: {x: 0.97, y: -0.3, z: -1.01}
 --- !u!195 &2118781289
 NavMeshAgent:
