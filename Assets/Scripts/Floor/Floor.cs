@@ -17,13 +17,13 @@ public class Floor : MonoBehaviour
 	public GameObject prefab;
 	[HideInInspector]
 	public List<NodeLink> nodeLinks = new List<NodeLink>();
-	private int X = 2;
-	private int Y = 2;
+	private float X = 2;
+	private float Y = 2;
 
 	void Start()
 	{
-		X = (int)transform.localScale.x;
-		Y = (int)transform.localScale.z;
+		X = transform.localScale.x;
+		Y = transform.localScale.z;
 		grid = new FloorGrid(Y, X, this, 1);
 		//Debug.Log($"we init grid of {transform.name}");
 

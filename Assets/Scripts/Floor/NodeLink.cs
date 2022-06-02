@@ -8,7 +8,7 @@ public class NodeLink : MonoBehaviour
 	[HideInInspector]
 	public Node node;
 	[HideInInspector]
-	public Floor floor;
+	public Floor floor { get; set; }
 
 	public override string ToString()
 	{

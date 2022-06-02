@@ -14,6 +14,7 @@ public static class FindPath
 	// link to visit https://www.youtube.com/watch?v=icZj67PTFhc
 	public static List<Node> AStarAlgo(Node startNode, Node destination)
 	{
+
 		startNode.g = 0;
 		startNode.h = CalcH(startNode, destination);
 		startNode.f = startNode.g + startNode.h;

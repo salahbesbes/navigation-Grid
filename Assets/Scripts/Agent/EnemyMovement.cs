@@ -1,4 +1,5 @@
 ﻿using GridNameSpace;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -30,6 +31,9 @@ public class EnemyMovement : MonoBehaviour
 	public MoveController Target;
 	public Vector3 offset;
 	HashSet<CoverTransform> coverTransforms = new HashSet<CoverTransform>();
+	private Coroutine PatrolCoroutine;
+	public Transform PatrolPointHolder;
+	public List<Vector3> PatrolPoints = new List<Vector3>();
 	private void Awake()
 	{
 		Agent = GetComponent<NavMeshAgent>();
@@ -45,8 +49,48 @@ public class EnemyMovement : MonoBehaviour
 		GetCoverTransformInRange();
 		UpdateAvailableCover();
 		CoverNode perfectCover = GetPerfectCover(coverTransforms);
-		Debug.Log($"perfect node {perfectCover?.node}");
-		Instantiate(controller.floor.prefab, perfectCover.node.LocalCoord + Vector3.up, Quaternion.identity).GetComponent<Renderer>().material.color = Color.yellow;
+		if (perfectCover != null)
+		{
+			Debug.Log($"perfect node {perfectCover?.node}");
+			Instantiate(controller.floor.prefab, perfectCover.node.LocalCoord + Vector3.up, Quaternion.identity).GetComponent<Renderer>().material.color = Color.yellow;
+		}
+
+		foreach (Transform point in PatrolPointHolder)
+		{
+			PatrolPoints.Add(point.position);
+		}
+
+		StartPatrol();
+	}
+
+	private void StartPatrol()
+	{
+
+		PatrolCoroutine = StartCoroutine(Patrol(PatrolPoints));
+	}
+
+	private IEnumerator Patrol(List<Vector3> patrolPoints)
+	{
+		int i = 0;
+		while (true)
+		{
+			i = i % patrolPoints.Count;
+
+			Node PatrolDest = controller.floor.grid.GetNode(patrolPoints[i]);
+
+			controller.StartMoving(PatrolDest);
+
+			yield return new WaitUntil(() =>
+			{
+				//Debug.Log($" we reach destination {PatrolDest} {controller.curentPositon == PatrolDest}");
+				return controller.curentPositon == PatrolDest;
+			});
+			// we can make him look around him for a while then fo to the next point ( code here )
+
+			yield return new WaitForSeconds(1f);
+
+			i++;
+		}
 	}
 
 	private CoverNode GetPerfectCover(HashSet<CoverTransform> coverTransforms)
@@ -104,7 +148,7 @@ public class EnemyMovement : MonoBehaviour
 				if (NavMesh.FindClosestEdge(hit.position, out hit, Agent.areaMask))
 				{
 					// cover first Cover than create all potential Cover aroyn the CoverTransform
-					Node nodeCov = controller.floor.grid.GetNode(null, hit.position);
+					Node nodeCov = controller.floor.grid.GetNode(hit.position);
 					CoverTransform obj = new CoverTransform(nodeCov.LocalCoord, nodeCov.X, nodeCov.Y, nodeCov.grid, Colliders[i].transform);
 					CoverNode newCover = new CoverNode(nodeCov, obj);
 					obj.CreatePotentialCover(newCover, null);

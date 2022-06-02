@@ -18,32 +18,42 @@ public class MoveController : MonoBehaviour
 	private int destinationY;
 	NodeLink nodeLink;
 	public Transform Enemy;
-	void Start()
+	private void Awake()
 	{
 		agent = GetComponent<NavMeshAgent>();
-
-		// Disabling auto-braking allows for continuous movement
-		// between points (ie, the agent doesn't slow down as it
-		// approaches a destination point).
 
 	}
 	public void StartMoving(Node destination)
 	{
 		curentPositon = floor.grid.GetNode(transform);
+		if (destination == null)
+		{
+			Debug.Log($"cant move,  Destination is null");
+			return;
+		}
+		if (curentPositon == null)
+		{
+			Debug.Log($"cant move, CurentPos is null");
+			return;
+		}
+
 		path = FindPath.getPathToDestination(curentPositon, destination);
+
 		if (path.Count == 0)
 		{
 			Debug.Log($"path.count is 0 we wont move");
 			return;
 		}
-		wordSpacePath = FindPath.createWayPointOriginal(path);
+		List<Vector3> optimizedPath = FindPath.createWayPointOriginal(path);
+		Debug.Log($"we are at {curentPositon} and start moving toward {destination}");
 		//Debug.Log($"{wordSpacePath.Count}");
-		StartCoroutine(Move());
+		StartCoroutine(Move(optimizedPath));
 	}
 
 	private void Update()
 	{
 		curentPositon = floor.grid.GetNode(transform);
+		//Debug.Log($"{curentPositon}");
 		if (agent.name == "player")
 		{
 			transform.LookAt(Enemy);
@@ -59,33 +69,53 @@ public class MoveController : MonoBehaviour
 			{
 				pressedOnDifferentFloor = true;
 			}
+			else
+			{
+				pressedOnDifferentFloor = false;
+			}
 
 
 
 			if (pressedOnDifferentFloor)
 			{
-				newFloor.grid.GetNodeCoord(out destinationX, out destinationY);
+				newFloor.grid.GetNodeCoord(newFloor, out destinationX, out destinationY);
+
 				if (destinationX >= 0 && destinationY >= 0)
 				{
-					if (newFloor.grid.GetNode(destinationX, destinationY).isObstacle)
-					{
-						Debug.Log($"you clicked on obstacle");
-						return;
-					}
-				}
-
-				nodeLink = ClosestNodeLinkAvailable();
-				destination = nodeLink.node;
-				if (destination != null)
-				{
+					Debug.Log($"dest [x{destinationX}, y{destinationY}]");
+					nodeLink = ClosestNodeLinkAvailable();
+					destination = nodeLink.node;
 					StartMoving(destination);
+					//Node finalDest = newFloor.grid.GetNode(destinationX, destinationY);
+					//if (finalDest == null)
+					//{
+					//	Debug.Log($"final des is (null)");
+					//	return;
 
+					//}
+					//else if (finalDest.isObstacle)
+					//{
+					//	Debug.Log($"you clicked on obstacle");
+					//	return;
+					//}
+					//else
+					//{
+
+					//}
 				}
+				else
+				{
+					Debug.Log($"dest [x{destinationX}, y{destinationY}]");
+				}
+
+
 
 			}
 			else
 			{
-				floor.grid.GetNodeCoord(out destinationX, out destinationY);
+				Debug.Log($"dest [x{destinationX}, y{destinationY}]");
+
+				floor.grid.GetNodeCoord(floor, out destinationX, out destinationY);
 				if (destinationX >= 0 && destinationY >= 0)
 				{
 					if (floor.grid.GetNode(destinationX, destinationY).isObstacle)
@@ -99,10 +129,7 @@ public class MoveController : MonoBehaviour
 
 				destination = floor.grid.GetNode(destinationX, destinationY);
 
-				if (destination != null)
-				{
-					StartMoving(destination);
-				}
+				StartMoving(destination);
 
 
 			}
@@ -161,7 +188,7 @@ public class MoveController : MonoBehaviour
 		NodeLink nodelink = other.transform.GetComponent<NodeLink>();
 
 		if (nodelink == null || pressedOnDifferentFloor == false) return;
-		StopCoroutine(Move());
+		StopCoroutine("Move");
 		// how to know if we want to move to nodeLink Destination or
 		// we just came from some other floor and want to move to real Destination
 		Link link = other.transform.GetComponentInParent<Link>();
@@ -183,26 +210,26 @@ public class MoveController : MonoBehaviour
 			floor = nodelink.node.grid.floor;
 			nodelink = nodelink.Destiation;
 			curentPositon = nodelink.Destiation.node;
-			//Debug.Log($"we are on node {curentPositon} in the new Floor {floor} and want to  move to newGrid[{destinationX},{destinationY}] (manual set) ");
-
-			destination = floor.grid.nodes[destinationX, destinationY];
+			destination = floor.grid.GetNode(destinationX, destinationY);
+			//Debug.Log($"we are on node ({curentPositon}) in the new Floor {floor} and want to  move to newGrid[{destinationX},{destinationY}]  {destination}");
 			path.Clear();
 			path = FindPath.getPathToDestination(curentPositon, destination);
-			wordSpacePath = FindPath.createWayPointOriginal(path);
-			StartCoroutine(Move());
+			List<Vector3> optimizedPath = FindPath.createWayPointOriginal(path);
+			StartCoroutine(Move(optimizedPath));
+			//Debug.Log($"new current {floor.grid.GetNode(transform)}");
 			pressedOnDifferentFloor = false;
 		}
 	}
 
-	private IEnumerator RunScenario(int Index)
+	private IEnumerator RunScenario(List<Vector3> path, int Index)
 	{
-		agent.SetDestination(wordSpacePath[Index]);
+		agent.SetDestination(path[Index]);
 		yield return new WaitUntil(() =>
 		{
 
 			//Debug.Log($"index {Index} distance ={Vector3.Distance(wordSpacePath[Index] + Vector3.up * agent.baseOffset, agent.transform.position)} agen radius {agent.radius}  comp is {Vector3.Distance(wordSpacePath[Index] + Vector3.up * agent.baseOffset, agent.transform.position) <= agent.radius}");
 
-			return Vector3.Distance(wordSpacePath[Index] + Vector3.up * agent.baseOffset, agent.transform.position) <= agent.radius;
+			return Vector3.Distance(path[Index] + Vector3.up * agent.baseOffset, agent.transform.position) <= agent.radius;
 		});
 		yield return new WaitForSeconds(0.1f);
 
@@ -219,16 +246,16 @@ public class MoveController : MonoBehaviour
 		});
 	}
 
-	private IEnumerator Move()
+	private IEnumerator Move(List<Vector3> path)
 	{
 		float pauseTime = 0.1f;
-		for (int i = 0; i < wordSpacePath.Count; i++)
+		for (int i = 0; i < path.Count; i++)
 		{
-			yield return StartCoroutine(RunScenario(i));
+			yield return StartCoroutine(RunScenario(path, i));
 			//agent.SetDestination(wordSpacePath[i]);
 			yield return new WaitUntil(() =>
 			{
-				return Vector3.Distance(wordSpacePath[i] + Vector3.up * agent.baseOffset, agent.transform.position) <= agent.radius;
+				return Vector3.Distance(path[i] + Vector3.up * agent.baseOffset, agent.transform.position) <= agent.radius;
 			});
 			yield return new WaitForSeconds(pauseTime);
 		}

@@ -245,14 +245,34 @@ namespace GridNameSpace
 		[NonSerialized]
 		public Vector3 buttonLeft;
 		public Floor floor;
-		public FloorGrid(int X, int Y, Floor floor, int Nodesize = 1)
+		private float floorSizeX;
+		private float floorSizeY;
+		public FloorGrid(float X, float Y, Floor floor, int Nodesize = 1)
 		{
+			// Y is same(replace) to floor.z
 
+			// todo: if we add one row/col and we dont have enough space to go(move) to the the center of that node
+			// we have to calculate the nearest point on the navmesh using SampleNamv methode
 
-			width = Mathf.RoundToInt(X / nodeSize);
-			height = Mathf.RoundToInt(Y / nodeSize);
-			Debug.Log($"grid {width},{height}");
 			nodeSize = Nodesize;
+			floorSizeX = X;
+			floorSizeY = Y;
+
+			width = Mathf.FloorToInt(floorSizeX / nodeSize);
+			height = Mathf.FloorToInt(floorSizeY / nodeSize);
+			//Debug.Log($"original {X}, modul {X % nodeSize} ,  {Y} modul {Y % nodeSize}   , sized/ 4 = { (float)nodeSize / 8}");
+			//if (X % nodeSize >= (float)nodeSize / 8)
+			//{
+			//	Debug.Log($"we added 1  To the X (width) ");
+			//	width++;
+			//}
+			//if (Y % nodeSize >= (float)nodeSize / 8)
+			//{
+			//	Debug.Log($"we added 1  To the Y (height) ");
+			//	height++;
+			//}
+
+			Debug.Log($"grid [{width},{height}] in {floor} with cell size {nodeSize}");
 			nodeRadius = nodeSize / 2;
 			nodes = new Node[height, width];
 			this.floor = floor;
@@ -262,26 +282,26 @@ namespace GridNameSpace
 		}
 
 
-		public void GetNodeCoord(out int destinationX, out int destinationY, Camera cam = null)
+		public void GetNodeCoord(Floor floor, out int destinationX, out int destinationY, Camera cam = null)
 		{
+
+			// todo: modify tyhis methode to handle nodeSize changes ( now it works only for nodeSize = 1)
+
 			if (cam == null) cam = Camera.main;
 			Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 			Debug.DrawRay(ray.origin, ray.direction, Color.black);
 			if (Physics.Raycast(ray, out RaycastHit hit, floor.floorLayer))
 			{
 
-				// todo: we get the position of the mouse toward the grid we create we need
-				// to implement the logic we need
 				Vector3 worldPosition = ray.GetPoint(hit.distance);
-				if (worldPosition.x >= floor.transform.position.x - width / 2 && worldPosition.x <= width / 2 + floor.transform.position.x
-					&& worldPosition.z >= floor.transform.position.z - height / 2 && worldPosition.z <= height / 2 + floor.transform.position.z)
+				if (worldPosition.x >= floor.transform.position.x - (float)floor.grid.height / 2 && worldPosition.x <= (float)floor.grid.height / 2 + floor.transform.position.x
+					&& worldPosition.z >= floor.transform.position.z - (float)floor.grid.width / 2 && worldPosition.z <= (float)floor.grid.width / 2 + floor.transform.position.z)
 				{
 					// objectif is to have always 8
 					float roundX;
 					float roundY;
 					int indexY = 0;
 					int indexX = 0;
-
 
 					roundX = Mathf.Floor(worldPosition.x) + (float)nodeSize / 2;
 					indexX = (int)(roundX - buttonLeft.x) / nodeSize;
@@ -297,6 +317,7 @@ namespace GridNameSpace
 					destinationY = indexY;
 					return;
 				}
+
 			}
 			destinationX = -1;
 			destinationY = -1;
@@ -305,7 +326,7 @@ namespace GridNameSpace
 		{
 			if (nodes == null) return null;
 
-			if (X >= 0 && X < width && Y >= 0 && Y < height)
+			if (X >= 0 && X < height && Y >= 0 && Y < width)
 				return nodes[X, Y];
 
 			return null;
@@ -318,7 +339,8 @@ namespace GridNameSpace
 			{
 				for (int y = 0; y < width; y++)
 				{
-					if (nodes[x, y].LocalCoord.x == i && nodes[x, y].LocalCoord.z == j)
+					//Debug.Log($" j {j} -> x ({nodes[x, y].LocalCoord.x}), i {i} -> z ({nodes[x, y].LocalCoord.z})");
+					if (nodes[x, y].LocalCoord.x == j && nodes[x, y].LocalCoord.z == i)
 					{
 						return nodes[x, y];
 					}
@@ -327,30 +349,37 @@ namespace GridNameSpace
 			return null;
 		}
 
-		public Node GetNode(Transform prefab, Vector3? vect3 = null)
+		public Node GetNode(Transform prefab)
 		{
-			if (prefab != null)
-			{
-				Vector3 pos = prefab.position;
-				float posX = pos.x;
-				float posY = pos.z;
+			int percentX, percentY;
+			float tmpX, tmpY;
 
-				float percentX = Mathf.Floor(posX) + (float)nodeSize / 2;
-				float percentY = Mathf.Floor(posY) + (float)nodeSize / 2;
-				return GetNode(percentX, percentY);
-			}
-			else if (prefab == null && vect3 != null)
-			{
-				float posX = vect3.Value.x;
-				float posY = vect3.Value.z;
+			tmpX = (prefab.position.z - buttonLeft.z) / nodeSize;
+			tmpY = (prefab.position.x - buttonLeft.x) / nodeSize;
 
-				float percentX = Mathf.Floor(posX) + (float)nodeSize / 2;
-				float percentY = Mathf.Floor(posY) + (float)nodeSize / 2;
+			percentX = Mathf.RoundToInt(tmpX);
+			percentY = Mathf.RoundToInt(tmpY);
 
-				return GetNode(percentX, percentY);
-			}
-			return null;
+
+			return GetNode(percentY, percentX);
 		}
+
+		public Node GetNode(Vector3 Pos)
+		{
+			int percentX, percentY;
+			float tmpX, tmpY;
+
+			tmpX = (Pos.z - buttonLeft.z) / nodeSize;
+			tmpY = (Pos.x - buttonLeft.x) / nodeSize;
+
+			percentX = Mathf.RoundToInt(tmpX);
+			percentY = Mathf.RoundToInt(tmpY);
+
+
+			return GetNode(percentY, percentX);
+		}
+
+
 		void generateNodes()
 		{
 			buttonLeft = floor.transform.position - (Vector3.right * floor.transform.localScale.x) / 2 - (Vector3.forward * floor.transform.localScale.z) / 2;
