@@ -32,7 +32,7 @@ namespace GridNameSpace
 		{
 			if (Player.curentPositon == null)
 			{
-				Player.curentPositon = Player.floor.grid.GetNode(Player.transform);
+				Player.curentPositon = Player.ActiveFloor.grid.GetNode(Player.transform);
 			}
 			DistanceToPlayer = Vector3.Distance(node.LocalCoord, Player.curentPositon.LocalCoord);
 		}

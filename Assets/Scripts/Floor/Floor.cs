@@ -20,7 +20,7 @@ public class Floor : MonoBehaviour
 	private float X = 2;
 	private float Y = 2;
 
-	void Start()
+	void Awake()
 	{
 		X = transform.localScale.x;
 		Y = transform.localScale.z;
@@ -82,7 +82,9 @@ public class Floor : MonoBehaviour
 					nodeLink.floor = this;
 					if (!nodeLinks.Contains(nodeLink))
 					{
-						nodeLinks.Add(nodeLink);
+
+
+						AddNodeLink(nodeLink);
 					}
 
 
@@ -94,7 +96,10 @@ public class Floor : MonoBehaviour
 		}
 	}
 
-
+	private void AddNodeLink(NodeLink nodeLink)
+	{
+		nodeLinks.Add(nodeLink);
+	}
 
 	void Update()
 	{
@@ -115,7 +120,10 @@ public class Floor : MonoBehaviour
 
 
 
-
+	public override string ToString()
+	{
+		return $" {transform.name}";
+	}
 
 	private async void OnDrawGizmos()
 	{

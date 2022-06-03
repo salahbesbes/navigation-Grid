@@ -33,7 +33,7 @@ public class EnemyMovement : MonoBehaviour
 	HashSet<CoverTransform> coverTransforms = new HashSet<CoverTransform>();
 	private Coroutine PatrolCoroutine;
 	public Transform PatrolPointHolder;
-	public List<Vector3> PatrolPoints = new List<Vector3>();
+	public List<Node> PatrolPoints = new List<Node>();
 	private void Awake()
 	{
 		Agent = GetComponent<NavMeshAgent>();
@@ -52,46 +52,96 @@ public class EnemyMovement : MonoBehaviour
 		if (perfectCover != null)
 		{
 			Debug.Log($"perfect node {perfectCover?.node}");
-			Instantiate(controller.floor.prefab, perfectCover.node.LocalCoord + Vector3.up, Quaternion.identity).GetComponent<Renderer>().material.color = Color.yellow;
+			Instantiate(controller.ActiveFloor.prefab, perfectCover.node.LocalCoord + Vector3.up, Quaternion.identity).GetComponent<Renderer>().material.color = Color.yellow;
 		}
 
 		foreach (Transform point in PatrolPointHolder)
 		{
-			PatrolPoints.Add(point.position);
+			// for each point get the Floor under them, then get the node they sit on
+			if (Physics.Raycast(point.position, Vector3.down, out RaycastHit hit, controller.ActiveFloor.floorLayer))
+			{
+				hit.transform.TryGetComponent<Floor>(out Floor FloorPoint);
+				if (FloorPoint == null) continue;
+				PatrolPoints.Add(FloorPoint.grid.GetNode(point));
+			}
 		}
-
 		StartPatrol();
+
 	}
+
+
+
+
+
 
 	private void StartPatrol()
 	{
-
 		PatrolCoroutine = StartCoroutine(Patrol(PatrolPoints));
 	}
 
-	private IEnumerator Patrol(List<Vector3> patrolPoints)
+	private IEnumerator Patrol(List<Node> patrolPoints)
 	{
 		int i = 0;
-		while (true)
+
+		if (patrolPoints.Count == 0)
 		{
-			i = i % patrolPoints.Count;
+			Debug.Log($" PATROL Points IS EMPTY  ...");
 
-			Node PatrolDest = controller.floor.grid.GetNode(patrolPoints[i]);
+			yield break;
+		}
+		if (patrolPoints.Count == 1)
+		{
+			controller.StartMoving(patrolPoints[0]);
+			Debug.Log($" Only One Patrol Point :/ ...");
+		}
+		else
+		{
 
-			controller.StartMoving(PatrolDest);
-
-			yield return new WaitUntil(() =>
+			while (true)
 			{
-				//Debug.Log($" we reach destination {PatrolDest} {controller.curentPositon == PatrolDest}");
-				return controller.curentPositon == PatrolDest;
-			});
-			// we can make him look around him for a while then fo to the next point ( code here )
+				i = i % patrolPoints.Count;
 
-			yield return new WaitForSeconds(1f);
+				// set the Final Destination
+				controller.FinalDestination = patrolPoints[i];
 
-			i++;
+				// patrolpoint on an other platform
+				if (patrolPoints[i].grid.floor != controller.ActiveFloor)
+				{
+					// moving the the closest node Link leading the taht floor
+					NodeLink nodeLink = controller.ClosestNodeLinkAvailable(patrolPoints[i].grid.floor);
+					if (nodeLink == null)
+					{
+						Debug.Log($" cant Find a NodeLink To Cross to {patrolPoints[i].grid.floor}");
+						i++;
+						continue;
+					}
+					controller.StartMoving(nodeLink.node);
+
+				}
+				else
+				{
+					controller.StartMoving(patrolPoints[i]);
+				}
+
+
+				// we dont move to the next Patrol Point until we reach the Final Destination
+				yield return new WaitUntil(() =>
+				{
+					//Debug.Log($" we reach destination {patrolPoints[i]} {controller.curentPositon == patrolPoints[i]}");
+
+					return controller.curentPositon == controller.FinalDestination;
+				});
+				// we can make him look around him for a while then fo to the next point ( code here )
+
+				yield return new WaitForSeconds(1f);
+
+				i++;
+			}
 		}
 	}
+
+
+
 
 	private CoverNode GetPerfectCover(HashSet<CoverTransform> coverTransforms)
 	{
@@ -110,7 +160,7 @@ public class EnemyMovement : MonoBehaviour
 			bestNodesOfTtransforms.Add(cover.BestCoverAvailable);
 			if (cover.BestCoverAvailable != null)
 			{
-				Instantiate(controller.floor.prefab, cover.BestCoverAvailable.node.LocalCoord + Vector3.up * 0.5f, Quaternion.identity);
+				Instantiate(controller.ActiveFloor.prefab, cover.BestCoverAvailable.node.LocalCoord + Vector3.up * 0.5f, Quaternion.identity);
 
 			}
 
@@ -148,7 +198,7 @@ public class EnemyMovement : MonoBehaviour
 				if (NavMesh.FindClosestEdge(hit.position, out hit, Agent.areaMask))
 				{
 					// cover first Cover than create all potential Cover aroyn the CoverTransform
-					Node nodeCov = controller.floor.grid.GetNode(hit.position);
+					Node nodeCov = controller.ActiveFloor.grid.GetNode(hit.position);
 					CoverTransform obj = new CoverTransform(nodeCov.LocalCoord, nodeCov.X, nodeCov.Y, nodeCov.grid, Colliders[i].transform);
 					CoverNode newCover = new CoverNode(nodeCov, obj);
 					obj.CreatePotentialCover(newCover, null);
@@ -180,6 +230,10 @@ public class EnemyMovement : MonoBehaviour
 	private void Update()
 	{
 		transform.LookAt(Player);
+		if (Input.GetMouseButtonDown(0))
+		{
+			StopCoroutine(PatrolCoroutine);
+		}
 	}
 
 
@@ -259,6 +313,13 @@ public class EnemyMovement : MonoBehaviour
 	private void OnDrawGizmos()
 	{
 		//return;
+
+		foreach (Transform point in PatrolPointHolder)
+		{
+			Gizmos.color = Color.black;
+			Gizmos.DrawRay(point.position, Vector3.down);
+		}
+
 		Player = Target.transform;
 		foreach (CoverTransform CoverPos in coverTransforms)
 		{

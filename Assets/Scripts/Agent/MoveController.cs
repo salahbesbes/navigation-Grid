@@ -1,6 +1,7 @@
 using GridNameSpace;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -10,14 +11,16 @@ public class MoveController : MonoBehaviour
 	NavMeshAgent agent;
 
 	List<Node> path = new List<Node>();
-	List<Vector3> wordSpacePath = new List<Vector3>();
-	public Floor floor = null;
-	Node destination;
+	public Floor ActiveFloor = null;
+	public Node FinalDestination;
 	public Node curentPositon;
 	private int destinationX;
 	private int destinationY;
-	NodeLink nodeLink;
+	public NodeLink ActiveNodeLink;
 	public Transform Enemy;
+
+	public Coroutine crossing = null;
+	public bool pressedOnDifferentFloor;
 	private void Awake()
 	{
 		agent = GetComponent<NavMeshAgent>();
@@ -25,7 +28,8 @@ public class MoveController : MonoBehaviour
 	}
 	public void StartMoving(Node destination)
 	{
-		curentPositon = floor.grid.GetNode(transform);
+		curentPositon = ActiveFloor.grid.GetNode(transform);
+
 		if (destination == null)
 		{
 			Debug.Log($"cant move,  Destination is null");
@@ -41,18 +45,18 @@ public class MoveController : MonoBehaviour
 
 		if (path.Count == 0)
 		{
-			Debug.Log($"path.count is 0 we wont move");
+			//Debug.Log($"  path from {curentPositon} to {destination} is 0 we wont move");
 			return;
 		}
 		List<Vector3> optimizedPath = FindPath.createWayPointOriginal(path);
-		Debug.Log($"we are at {curentPositon} and start moving toward {destination}");
+		//Debug.Log($"we are at {curentPositon} and start moving toward {destination}");
 		//Debug.Log($"{wordSpacePath.Count}");
 		StartCoroutine(Move(optimizedPath));
 	}
 
 	private void Update()
 	{
-		curentPositon = floor.grid.GetNode(transform);
+		curentPositon = ActiveFloor.grid.GetNode(transform);
 		//Debug.Log($"{curentPositon}");
 		if (agent.name == "player")
 		{
@@ -61,11 +65,8 @@ public class MoveController : MonoBehaviour
 
 		if (Input.GetMouseButtonDown(0) && agent.name == "player")
 		{
-
-
-
 			Floor newFloor = GetFloorPressed();
-			if (newFloor != floor)
+			if (newFloor != ActiveFloor)
 			{
 				pressedOnDifferentFloor = true;
 			}
@@ -79,12 +80,12 @@ public class MoveController : MonoBehaviour
 			if (pressedOnDifferentFloor)
 			{
 				newFloor.grid.GetNodeCoord(newFloor, out destinationX, out destinationY);
-
+				FinalDestination = newFloor.grid.GetNode(destinationX, destinationY);
 				if (destinationX >= 0 && destinationY >= 0)
 				{
 					Debug.Log($"dest [x{destinationX}, y{destinationY}]");
-					nodeLink = ClosestNodeLinkAvailable();
-					destination = nodeLink.node;
+					ActiveNodeLink = ClosestNodeLinkAvailable(newFloor);
+					Node destination = ActiveNodeLink.node;
 					StartMoving(destination);
 					//Node finalDest = newFloor.grid.GetNode(destinationX, destinationY);
 					//if (finalDest == null)
@@ -115,10 +116,10 @@ public class MoveController : MonoBehaviour
 			{
 				Debug.Log($"dest [x{destinationX}, y{destinationY}]");
 
-				floor.grid.GetNodeCoord(floor, out destinationX, out destinationY);
+				ActiveFloor.grid.GetNodeCoord(ActiveFloor, out destinationX, out destinationY);
 				if (destinationX >= 0 && destinationY >= 0)
 				{
-					if (floor.grid.GetNode(destinationX, destinationY).isObstacle)
+					if (ActiveFloor.grid.GetNode(destinationX, destinationY).isObstacle)
 					{
 						Debug.Log($"you clicked on obstacle");
 						return;
@@ -127,21 +128,12 @@ public class MoveController : MonoBehaviour
 
 
 
-				destination = floor.grid.GetNode(destinationX, destinationY);
+				FinalDestination = ActiveFloor.grid.GetNode(destinationX, destinationY);
 
-				StartMoving(destination);
+				StartMoving(FinalDestination);
 
 
 			}
-
-
-
-
-
-
-
-
-
 
 		}
 	}
@@ -151,7 +143,7 @@ public class MoveController : MonoBehaviour
 		if (cam == null) cam = Camera.main;
 		Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 		Debug.DrawRay(ray.origin, ray.direction, Color.black);
-		if (Physics.Raycast(ray, out RaycastHit hit, floor.floorLayer))
+		if (Physics.Raycast(ray, out RaycastHit hit, ActiveFloor.floorLayer))
 		{
 			Floor newFloor = hit.transform.GetComponent<Floor>();
 			if (newFloor != null)
@@ -159,15 +151,27 @@ public class MoveController : MonoBehaviour
 				return newFloor;
 			}
 		}
-		return floor;
+		return ActiveFloor;
 	}
 
-	public NodeLink ClosestNodeLinkAvailable()
+	public NodeLink ClosestNodeLinkAvailable(Floor newFloor)
 	{
 		float minDistance = int.MinValue;
 		NodeLink closestNode = null;
 		float currentDistance;
-		foreach (NodeLink node in floor.nodeLinks)
+
+		// Listen To every Availabe nodeLink on the floor
+
+		foreach (var nodeLink in ActiveFloor.nodeLinks)
+		{
+			nodeLink.AddObservable(this);
+			nodeLink.Destiation.AddObservable(this);
+		}
+		// get all nodeLinks that have the Destination.floor is the newFloor
+		List<NodeLink> NodeLinksThatLeadToNewFloor = ActiveFloor.nodeLinks.Where(node => node.Destiation.floor == newFloor).ToList();
+
+
+		foreach (NodeLink node in NodeLinksThatLeadToNewFloor)
 		{
 			currentDistance = Vector3.Distance(node.transform.position, transform.position);
 			if (currentDistance > minDistance)
@@ -176,50 +180,38 @@ public class MoveController : MonoBehaviour
 				closestNode = node;
 			}
 		}
-		nodeLink = closestNode;
+		ActiveNodeLink = closestNode;
 		return closestNode;
 	}
 
-	private Coroutine crossing = null;
-	public bool pressedOnDifferentFloor;
 
-	private void OnTriggerEnter(Collider other)
+
+
+
+	public void CrossingToNodeLinkDestination(NodeLink currentNodelink)
 	{
-		NodeLink nodelink = other.transform.GetComponent<NodeLink>();
-
-		if (nodelink == null || pressedOnDifferentFloor == false) return;
+		//Debug.Log($"final Destination is {FinalDestination} on the {FinalDestination.grid.floor} active floor is {ActiveFloor}");
 		StopCoroutine("Move");
-		// how to know if we want to move to nodeLink Destination or
-		// we just came from some other floor and want to move to real Destination
-		Link link = other.transform.GetComponentInParent<Link>();
-		//Debug.Log($"we hit {other.name} with the link {link.name}");
-		if (nodelink.node.grid == floor.grid && crossing == null)
-		{
-			// we want to Move to nodeLink.Destination (cross)
-			//Debug.Log($"we are crossing the bridge to {nodelink.Destiation.node.LocalCoord} ");
-			crossing = StartCoroutine(Cross(nodelink.Destiation.node.LocalCoord));
-			//agent.SetDestination(nodelink.Destiation.node.LocalCoord);
 
-		}
-		else if (nodelink.node.grid != floor.grid && crossing != null)
-		{
-
-			// player changed floor need update this class properties
-			StopCoroutine("Cross");
-			crossing = null;
-			floor = nodelink.node.grid.floor;
-			nodelink = nodelink.Destiation;
-			curentPositon = nodelink.Destiation.node;
-			destination = floor.grid.GetNode(destinationX, destinationY);
-			//Debug.Log($"we are on node ({curentPositon}) in the new Floor {floor} and want to  move to newGrid[{destinationX},{destinationY}]  {destination}");
-			path.Clear();
-			path = FindPath.getPathToDestination(curentPositon, destination);
-			List<Vector3> optimizedPath = FindPath.createWayPointOriginal(path);
-			StartCoroutine(Move(optimizedPath));
-			//Debug.Log($"new current {floor.grid.GetNode(transform)}");
-			pressedOnDifferentFloor = false;
-		}
+		// we want to Move to nodeLink.Destination (cross)
+		crossing = StartCoroutine(Cross(currentNodelink.Destiation.node.LocalCoord));
+		ActiveNodeLink = currentNodelink.Destiation;
 	}
+
+	public void WhenReachNodeLinkDestination(NodeLink currentNodelink)
+	{
+		StopCoroutine("Cross"); crossing = null;
+		StopCoroutine("Move");
+
+		curentPositon = currentNodelink.node;
+		ActiveFloor = currentNodelink.node.grid.floor;
+
+		//Debug.Log($"when Finished Crossing ActiveFloor is {ActiveFloor} and destination is {FinalDestination}  current pos is {curentPositon}");
+		StartMoving(FinalDestination);
+		pressedOnDifferentFloor = false;
+	}
+
+
 
 	private IEnumerator RunScenario(List<Vector3> path, int Index)
 	{
@@ -263,5 +255,23 @@ public class MoveController : MonoBehaviour
 	}
 
 
+
+
+
+	private void OnDisable()
+	{
+		foreach (var nodeLink in ActiveFloor.nodeLinks)
+		{
+			nodeLink.RemoveUnitObservable(this);
+		}
+	}
+
+	private void OnDestroy()
+	{
+		foreach (var nodeLink in ActiveFloor.nodeLinks)
+		{
+			nodeLink.RemoveUnitObservable(this);
+		}
+	}
 
 }
