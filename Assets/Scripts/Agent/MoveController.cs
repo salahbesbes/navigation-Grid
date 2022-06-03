@@ -9,7 +9,9 @@ using UnityEngine.AI;
 public class MoveController : MonoBehaviour
 {
 	NavMeshAgent agent;
-
+	private static readonly int sSpeedHash = Animator.StringToHash("Speed");
+	private Animator mAnimator;
+	LineRenderer lr;
 	List<Node> path = new List<Node>();
 	public Floor ActiveFloor = null;
 	public Node FinalDestination;
@@ -23,7 +25,9 @@ public class MoveController : MonoBehaviour
 	public bool pressedOnDifferentFloor;
 	private void Awake()
 	{
+		mAnimator = GetComponent<Animator>();
 		agent = GetComponent<NavMeshAgent>();
+		lr = GetComponent<LineRenderer>();
 
 	}
 	public void StartMoving(Node destination)
@@ -50,7 +54,11 @@ public class MoveController : MonoBehaviour
 		}
 		List<Vector3> optimizedPath = FindPath.createWayPointOriginal(path);
 		//Debug.Log($"we are at {curentPositon} and start moving toward {destination}");
-		//Debug.Log($"{wordSpacePath.Count}");
+		Debug.Log($"  path of length {optimizedPath.Count}");
+		foreach (var item in optimizedPath)
+		{
+			Debug.Log($"{ ActiveFloor.grid.GetNode(item)}");
+		}
 		StartCoroutine(Move(optimizedPath));
 	}
 
@@ -65,6 +73,18 @@ public class MoveController : MonoBehaviour
 
 		if (Input.GetMouseButtonDown(0) && agent.name == "player")
 		{
+
+			var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+			if (Physics.Raycast(ray, out RaycastHit Hit))
+			{
+				NavMeshPath path = new NavMeshPath();
+				agent.CalculatePath(Hit.point, path);
+				lr.positionCount = path.corners.Length;
+
+				lr.SetPositions(path.corners);
+			}
+
+
 			Floor newFloor = GetFloorPressed();
 			if (newFloor != ActiveFloor)
 			{
@@ -192,6 +212,8 @@ public class MoveController : MonoBehaviour
 	{
 		//Debug.Log($"final Destination is {FinalDestination} on the {FinalDestination.grid.floor} active floor is {ActiveFloor}");
 		StopCoroutine("Move");
+		StopCoroutine("Cross");
+		crossing = null;
 
 		// we want to Move to nodeLink.Destination (cross)
 		crossing = StartCoroutine(Cross(currentNodelink.Destiation.node.LocalCoord));
@@ -202,6 +224,10 @@ public class MoveController : MonoBehaviour
 	{
 		StopCoroutine("Cross"); crossing = null;
 		StopCoroutine("Move");
+
+		agent.speed = 8;
+
+
 
 		curentPositon = currentNodelink.node;
 		ActiveFloor = currentNodelink.node.grid.floor;
@@ -216,6 +242,7 @@ public class MoveController : MonoBehaviour
 	private IEnumerator RunScenario(List<Vector3> path, int Index)
 	{
 		agent.SetDestination(path[Index]);
+		//mAnimator.SetFloat(sSpeedHash, agent.speed);
 		yield return new WaitUntil(() =>
 		{
 
@@ -223,6 +250,7 @@ public class MoveController : MonoBehaviour
 
 			return Vector3.Distance(path[Index] + Vector3.up * agent.baseOffset, agent.transform.position) <= agent.radius;
 		});
+
 		yield return new WaitForSeconds(0.1f);
 
 
@@ -230,17 +258,23 @@ public class MoveController : MonoBehaviour
 
 	private IEnumerator Cross(Vector3 dest)
 	{
-		yield return new WaitForSeconds(0.2f);
+		agent.speed = 2;
+		yield return new WaitForSeconds(0.5f);
+		mAnimator.SetFloat(sSpeedHash, agent.speed);
 		agent.SetDestination(dest);
 		yield return new WaitUntil(() =>
 		{
 			return Vector3.Distance(dest + Vector3.up * agent.baseOffset, agent.transform.position) < agent.radius;
 		});
+		Debug.Log($"cross ");
+
 	}
 
 	private IEnumerator Move(List<Vector3> path)
 	{
 		float pauseTime = 0.1f;
+		mAnimator.SetFloat(sSpeedHash, agent.speed);
+
 		for (int i = 0; i < path.Count; i++)
 		{
 			yield return StartCoroutine(RunScenario(path, i));
@@ -249,8 +283,10 @@ public class MoveController : MonoBehaviour
 			{
 				return Vector3.Distance(path[i] + Vector3.up * agent.baseOffset, agent.transform.position) <= agent.radius;
 			});
+
 			yield return new WaitForSeconds(pauseTime);
 		}
+		mAnimator.SetFloat(sSpeedHash, 0);
 
 	}
 

@@ -10,10 +10,13 @@ using UnityEngine.AI;
 [RequireComponent(typeof(NavMeshAgent))]
 public class EnemyMovement : MonoBehaviour
 {
+	private static readonly int sSpeedHash = Animator.StringToHash("Speed");
+	private Animator mAnimator;
+	LineRenderer lr;
 	[HideInInspector]
 	public Transform Player;
 	public LayerMask HidableLayers;
-	public EnemyLineOfSightChecker LineOfSightChecker;
+	//public EnemyLineOfSightChecker LineOfSightChecker;
 	public NavMeshAgent Agent;
 	[Range(-1, 1)]
 	[Tooltip("Lower is a better hiding spot")]
@@ -36,10 +39,9 @@ public class EnemyMovement : MonoBehaviour
 	public List<Node> PatrolPoints = new List<Node>();
 	private void Awake()
 	{
+		lr = GetComponent<LineRenderer>();
 		Agent = GetComponent<NavMeshAgent>();
-
-		LineOfSightChecker.OnGainSight += HandleGainSight;
-		LineOfSightChecker.OnLoseSight += HandleLoseSight;
+		mAnimator = GetComponent<Animator>();
 
 	}
 
@@ -65,6 +67,8 @@ public class EnemyMovement : MonoBehaviour
 				PatrolPoints.Add(FloorPoint.grid.GetNode(point));
 			}
 		}
+
+
 		StartPatrol();
 
 	}
@@ -134,6 +138,7 @@ public class EnemyMovement : MonoBehaviour
 				// we can make him look around him for a while then fo to the next point ( code here )
 
 				yield return new WaitForSeconds(1f);
+				mAnimator.SetFloat(sSpeedHash, Agent.speed);
 
 				i++;
 			}
@@ -189,7 +194,7 @@ public class EnemyMovement : MonoBehaviour
 	void GetCoverTransformInRange()
 	{
 
-		int Hits = Physics.OverlapSphereNonAlloc(Agent.transform.position, LineOfSightChecker.Collider.radius, Colliders, HidableLayers);
+		int Hits = Physics.OverlapSphereNonAlloc(Agent.transform.position, 10, Colliders, HidableLayers);
 
 		for (int i = 0; i < Hits; i++)
 		{
@@ -230,6 +235,7 @@ public class EnemyMovement : MonoBehaviour
 	private void Update()
 	{
 		transform.LookAt(Player);
+
 		if (Input.GetMouseButtonDown(0))
 		{
 			StopCoroutine(PatrolCoroutine);
@@ -310,9 +316,24 @@ public class EnemyMovement : MonoBehaviour
 			CoverPos.UpdateBestCover();
 		}
 	}
+
 	private void OnDrawGizmos()
 	{
 		//return;
+
+
+
+		if (controller.FinalDestination != null)
+		{
+			lr = GetComponent<LineRenderer>();
+
+
+		}
+
+
+
+
+
 
 		foreach (Transform point in PatrolPointHolder)
 		{

@@ -114,7 +114,7 @@ public class EnemyMovementEditor : Editor
 			return;
 		}
 
-		int Hits = Physics.OverlapSphereNonAlloc(movement.Agent.transform.position, movement.LineOfSightChecker.Collider.radius, Colliders, movement.HidableLayers);
+		int Hits = Physics.OverlapSphereNonAlloc(movement.Agent.transform.position, 10, Colliders, movement.HidableLayers);
 
 		for (int i = 0; i < Hits; i++)
 		{
@@ -161,7 +161,7 @@ public class EnemyMovementEditor : Editor
 			Colliders[i] = null;
 		}
 
-		int Hits = Physics.OverlapSphereNonAlloc(movement.Agent.transform.position, movement.LineOfSightChecker.Collider.radius, Colliders, movement.HidableLayers);
+		int Hits = Physics.OverlapSphereNonAlloc(movement.Agent.transform.position, 10, Colliders, movement.HidableLayers);
 
 
 		int stepCount = Mathf.RoundToInt(360 * 0.3f);

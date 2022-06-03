@@ -64,7 +64,7 @@ public static class FindPath
 
 		}
 
-		Debug.Log($"cant find path in the map  current pos {startNode} des  is {destination}");
+		//Debug.Log($"cant find path in the map  current pos {startNode} des  is {destination}");
 		return res;
 
 	}
