@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 2
   tags:
   - IgnoreFromTrigger
+  - Wall
   layers:
   - Default
   - TransparentFX
@@ -18,7 +19,7 @@ TagManager:
   - Player
   - ConeOfSight
   - Obstacle
-  - 
+  - Portal
   - 
   - 
   - 

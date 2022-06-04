@@ -131,8 +131,6 @@ public class EnemyMovement : MonoBehaviour
 				// we dont move to the next Patrol Point until we reach the Final Destination
 				yield return new WaitUntil(() =>
 				{
-					//Debug.Log($" we reach destination {patrolPoints[i]} {controller.curentPositon == patrolPoints[i]}");
-
 					return controller.curentPositon == controller.FinalDestination;
 				});
 				// we can make him look around him for a while then fo to the next point ( code here )
@@ -392,9 +390,6 @@ public class EnemyMovement : MonoBehaviour
 				dir3.y = dir2.y;
 				float dot = Vector3.Dot(dir2, dir3);
 				Gizmos.color = Color.black;
-				//Gizmos.DrawRay(CoverPos.CoverPosition.position, dir2 * 1.5f);
-
-				//Gizmos.DrawLine(coverNode.node.LocalCoord, CoverPos.CoverPosition.position);
 
 				if (dot > 0 && dot <= 0.01f)
 					dot *= -1;

@@ -44,8 +44,10 @@ public class MoveController : MonoBehaviour
 			Debug.Log($"cant move, CurentPos is null");
 			return;
 		}
+		NavMeshPath navMeshPath = new NavMeshPath();
+		agent.CalculatePath(destination.LocalCoord, navMeshPath);
 
-		path = FindPath.getPathToDestination(curentPositon, destination);
+		path = FindPath.getPathToDestination(navMeshPath.corners, ActiveFloor);
 
 		if (path.Count == 0)
 		{
@@ -53,19 +55,13 @@ public class MoveController : MonoBehaviour
 			return;
 		}
 		List<Vector3> optimizedPath = FindPath.createWayPointOriginal(path);
-		//Debug.Log($"we are at {curentPositon} and start moving toward {destination}");
-		Debug.Log($"  path of length {optimizedPath.Count}");
-		foreach (var item in optimizedPath)
-		{
-			Debug.Log($"{ ActiveFloor.grid.GetNode(item)}");
-		}
+
 		StartCoroutine(Move(optimizedPath));
 	}
 
 	private void Update()
 	{
 		curentPositon = ActiveFloor.grid.GetNode(transform);
-		//Debug.Log($"{curentPositon}");
 		if (agent.name == "player")
 		{
 			transform.LookAt(Enemy);
@@ -82,6 +78,7 @@ public class MoveController : MonoBehaviour
 				lr.positionCount = path.corners.Length;
 
 				lr.SetPositions(path.corners);
+
 			}
 
 
@@ -134,7 +131,7 @@ public class MoveController : MonoBehaviour
 			}
 			else
 			{
-				Debug.Log($"dest [x{destinationX}, y{destinationY}]");
+				//Debug.Log($"dest [x{destinationX}, y{destinationY}]");
 
 				ActiveFloor.grid.GetNodeCoord(ActiveFloor, out destinationX, out destinationY);
 				if (destinationX >= 0 && destinationY >= 0)
@@ -278,7 +275,6 @@ public class MoveController : MonoBehaviour
 		for (int i = 0; i < path.Count; i++)
 		{
 			yield return StartCoroutine(RunScenario(path, i));
-			//agent.SetDestination(wordSpacePath[i]);
 			yield return new WaitUntil(() =>
 			{
 				return Vector3.Distance(path[i] + Vector3.up * agent.baseOffset, agent.transform.position) <= agent.radius;

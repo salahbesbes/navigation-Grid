@@ -14,7 +14,10 @@ public static class FindPath
 	// link to visit https://www.youtube.com/watch?v=icZj67PTFhc
 	public static List<Node> AStarAlgo(Node startNode, Node destination)
 	{
-
+		if (startNode == destination)
+		{
+			return new List<Node>();
+		}
 		startNode.g = 0;
 		startNode.h = CalcH(startNode, destination);
 		startNode.f = startNode.g + startNode.h;
@@ -48,6 +51,12 @@ public static class FindPath
 			{
 				if (closedLsit.Contains(neighbour) || neighbour.isObstacle) continue;
 
+
+				if (current.canReachNeighbor(neighbour) == false)
+				{
+					continue;
+				}
+
 				float tmpG = current.g + CalcG(current, neighbour);
 				// if the tmpG is less then the current G on the neighbour node
 				if (neighbour.g > tmpG)
@@ -64,94 +73,12 @@ public static class FindPath
 
 		}
 
-		//Debug.Log($"cant find path in the map  current pos {startNode} des  is {destination}");
+		Debug.Log($"cant find path in the map  current pos {startNode} destination  is {destination}");
 		return res;
 
 	}
 
 
-	/*
-	 startNode.g = 0;
-		Queue<Node> QueueNotTested = new Queue<Node>();
-		List<Node> result = new List<Node>();
-		bool success = false;
-
-		QueueNotTested.Enqueue(startNode);
-
-		while (QueueNotTested.Count >= 0)
-		{
-			// sort the list in acending order by the heuretic value
-			QueueNotTested = new Queue<Node>(QueueNotTested.OrderBy(item => item.h).OrderBy(item => item.nodeCost));
-
-			//var queue = new Queue<string>(myStringList);
-
-
-			//we can loop throw an empty list in that case we are sure we didnt
-			//find any path
-			if (QueueNotTested.Count == 0)
-			{
-				Debug.Log($"cant find path ");
-				success = false;
-				break;
-			}
-
-			// select the first node of the list which have the less value of the
-			// heuritic value
-			//Node current = QueueNotTested[0];
-			//if (queueOfSameHValue.Count > 0) Debug.Log($"{cur},  {current}");
-			//remove it from the rhe list
-			Node current = QueueNotTested.Dequeue();
-			// make it visited
-			current.visited = true;
-
-			// if the current == end we find the en point
-			if (current == destination)
-			{
-				//Debug.Log($"Found End :) ");
-				result = getThePath(startNode, current);
-				success = true;
-				break;
-			}
-			//printGrid(current);
-
-			if (current.isObstacle == true) continue;
-
-			for (int i = 0; i < current.neighbours.Count; i++)
-			{
-				// foreach neighbor which is not an obstacle
-				Node neighbor = current.neighbours[i];
-				if (neighbor.isObstacle == true) continue;
-				else
-				{
-					// calculate the g val (toWard the parent)
-					float neighborG = CalcG(current, neighbor);
-					// calculate the new possible g value (toWard the start
-					// node)
-					float tempG = current.g + neighborG;
-					// by default the neighbor.g is positif Infinit but after
-					// setting g val to a neighbor we can revisit this node and
-					// at this time the g val is not infinit so we wan do the
-					// comparison
-
-					if (tempG < neighbor.g)
-					{
-						neighbor.parent = current;
-						neighbor.g = tempG;
-						neighbor.h = neighbor.g + CalcH(neighbor, destination);
-						// update the list we are worrking on
-						QueueNotTested.Enqueue(neighbor);
-					}
-				}
-			}
-		}
-
-		// we pass the result var to the get methode and we set the gridPath any way (empty
-		// or full)
-		return result;
-	 
-	 
-	 
-	 */
 	public static float CalcG(Node a, Node b)
 	{
 		return Mathf.Abs(a.X - b.X) + Mathf.Abs(a.Y - b.Y);
@@ -174,6 +101,7 @@ public static class FindPath
 	/// <returns> </returns>
 	public static List<Node> getPathToDestination(Node currentUnitNode, Node endUnitNode)
 	{
+
 		//Debug.Log($"start {currentUnitNode} end {endUnitNode}");
 		return AStarAlgo(currentUnitNode, endUnitNode);
 	}
@@ -183,61 +111,31 @@ public static class FindPath
 	/// included. save the path to the class variable GridPath
 	/// </summary>
 	/// <param name="startNode"> start node </param>
-	/// <param name="current"> destiation </param>
-	public static List<Node> getThePath(Node startNode, Node current)
+	/// <param name="DestinationNode"> destiation </param>
+	public static List<Node> getThePath(Node startNode, Node DestinationNode)
 	{
-		Node tmp = current;
+		Node Current = DestinationNode;
 		// delete previous path
 		List<Node> path = new List<Node>();
 		startNode.path = new List<Node>();
 
 		int pathCost = 0;
-		while (tmp.parent != null)
+		while (Current.parent != null)
 		{
 			// fill the path variable
-			pathCost += tmp.nodeCost;
-			path.Add(tmp);
-			tmp = tmp.parent;
+			pathCost += Current.nodeCost;
+			path.Add(Current);
+			Current = Current.parent;
 			//tmp.color = Color.green;
 		}
 		path.Add(startNode);
 		path.Reverse();
-
+		path.ForEach(node => node.Reset());
 		startNode.path = path;
 		//Debug.Log($"path Cost {pathCost}");
 		return path;
 	}
 
-	///// <summary> return an array of position where the unit change position </summary>
-	///// <param name="path"> path between start and end nodes </param>
-	///// <returns> array of position where the unit change direction </returns>
-	//public static Vector3[] createWayPoint(List<Node> path)
-	//{
-
-	//	List<Vector3> pathPoint = new List<Vector3>();
-	//	for (int i = 0; i < path.Count; i++)
-	//	{
-	//		Node currentNode = path[i];
-
-	//		Vector3 point = currentNode.coord;
-
-	//		if (currentNode.tile.obj != null)
-	//		{
-	//			Node prevNode = path[i - 1];
-	//			pathPoint.Add(prevNode.coord);
-	//			Vector3 prevUP = new Vector3(prevNode.coord.x, 1, prevNode.coord.z);
-	//			pathPoint.Add(prevUP);
-	//		}
-
-	//		pathPoint.Add(point);
-	//		// todo: create a reference on the object sits ontop of the tile so that i know how tall he is
-
-	//	}
-
-	//	return pathPoint.ToArray();
-
-
-	//}
 	public static List<Vector3> createWayPointOriginal(List<Node> path)
 	{
 		Vector2 oldDirection = Vector2.zero;
@@ -270,39 +168,53 @@ public static class FindPath
 
 		return wayPoints;
 	}
+
+
+
+
+	public static List<Node> getPathToDestination(Vector3[] navmeshPath, Floor floor)
+	{
+		HashSet<Node> path = new HashSet<Node>();
+
+		//Debug.Log($"get path called  navmesh corners are {navmeshPath.Length}");
+
+		for (int i = 0; i < navmeshPath.Length; i++)
+		{
+			Node node = floor.grid.GetNode(navmeshPath[i]);
+			if (node == null) break;
+			else
+			{
+				//node = getClosestNeighbor(node, prevNode);
+				path.Add(node);
+
+			}
+
+		}
+
+		List<Node> result = new List<Node>(path);
+
+		path.Clear();
+		Node prevNode = result[0];
+		for (int i = 1; i < result.Count; i++)
+		{
+			Node node = result[i];
+			//FindPath.getPathToDestination(prevNode, node));
+			//Debug.Log($" search the path from {prevNode} to  {node}  {getPathToDestination(prevNode, node).Count}");
+
+			List<Node> tmp = getPathToDestination(prevNode, node);
+			path.UnionWith(tmp);
+
+			prevNode = node;
+
+		}
+
+		return path.ToList();
+	}
+
 }
 
-
-//public class Node
-//{
-//	public Color color;
-//	public Vector3 coord;
-//	public bool firstRange = false;
-//	public float g = float.PositiveInfinity;
-//	public float h = float.PositiveInfinity;
-//	public float f = float.PositiveInfinity;
-//	public int nodeCost = 0;
-//	public bool inRange = false;
-//	public bool isObstacle = false;
-//	public List<Node> neighbours;
-//	public Node parent = null;
-//	public List<Node> path;
-//	public bool visited = false;
-//	public int x;
-//	public int y;
-
-//	public GameObject quad;
-
-//	public Node(Vector3 coord, int x, int y)
-//	{
-//		this.coord = coord;
-//		this.x = x;
-//		this.y = y;
-//		neighbours = new List<Node>();
-//		path = new List<Node>();
-//	}
-
-//	public override string ToString()
-//	{
-//		return $" node ({x}, {y}) ";
-//	}
+public enum PortalDirection
+{
+	Horizental,
+	Vertical,
+}

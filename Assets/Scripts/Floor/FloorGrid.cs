@@ -183,6 +183,61 @@ namespace GridNameSpace
 			this.grid = grid;
 		}
 
+		// called when ever theire is some wall, we want to not cross through it but still can move the node  in other cases
+		public void NotifieNeighborsWithSomeRestriction(WallDirection direction)
+		{
+			foreach (Node neighbor in neighbours)
+			{
+				switch (direction)
+				{
+					case WallDirection.Right:
+						canGoRight = false;
+
+						if (neighbor.X > X && neighbor.Y == Y) // right 
+						{
+							neighbor.canGoLeft = false;
+						}
+
+						break;
+					case WallDirection.Left:
+						canGoLeft = false;
+
+						if (neighbor.X < X && neighbor.Y == Y) // left neighbor 
+						{
+							neighbor.canGoRight = false;
+						}
+						break;
+					case WallDirection.Top:
+						canGoTop = false;
+
+						if (neighbor.Y > Y && neighbor.X == X) // top
+						{
+							neighbor.canGoBottom = false;
+						}
+						break;
+					case WallDirection.Bottom:
+						canGoBottom = false;
+
+						if (neighbor.Y < Y && neighbor.X == X) // btom neighbor
+						{
+							neighbor.canGoTop = false;
+						}
+						break;
+					case WallDirection.Middle:
+						isObstacle = true;
+						break;
+					default:
+						break;
+				}
+
+
+
+
+
+				// tell the left neighbor that he can talk/go/search to me (this node)
+			}
+		}
+
 
 		public override void Reset()
 		{
@@ -194,6 +249,28 @@ namespace GridNameSpace
 		public override string ToString()
 		{
 			return $"({X}, {Y})";
+		}
+
+		public bool canReachNeighbor(Node neighbor)
+		{
+			// if left neighbor
+			if (neighbor.X < X && neighbor.Y == Y)
+			{
+				return canGoLeft;
+			}
+			if (neighbor.X > X && neighbor.Y == Y) // right 
+			{
+				return canGoRight;
+			}
+			if (neighbor.Y > Y && neighbor.X == X) // top
+			{
+				return canGoTop;
+			}
+			if (neighbor.Y < Y && neighbor.X == X) // btom neighbor
+			{
+				return canGoBottom;
+			}
+			return true;
 		}
 	}
 
@@ -211,7 +288,14 @@ namespace GridNameSpace
 		public float f = float.PositiveInfinity;
 		[NonSerialized]
 		public Node parent = null;
+		[NonSerialized]
 
+		public bool isBlocked = false;
+
+		public bool canGoLeft = false;
+		public bool canGoRight = false;
+		public bool canGoTop = false;
+		public bool canGoBottom = false;
 
 		public AStarNode()
 		{
@@ -228,6 +312,7 @@ namespace GridNameSpace
 			h = float.PositiveInfinity;
 			f = float.PositiveInfinity;
 			parent = null;
+			//isBlocked = false;
 		}
 	}
 
@@ -272,7 +357,7 @@ namespace GridNameSpace
 			//	height++;
 			//}
 
-			Debug.Log($"grid [{width},{height}] in {floor} with cell size {nodeSize}");
+			//Debug.Log($"grid [{width},{height}] in {floor} with cell size {nodeSize}");
 			nodeRadius = nodeSize / 2;
 			nodes = new Node[height, width];
 			this.floor = floor;
@@ -407,21 +492,25 @@ namespace GridNameSpace
 					//X is not 0, then we can add left (x - 1)
 					if (x > 0)
 					{
+						currentNode.canGoLeft = true;
 						currentNode.neighbours.Add(nodes[x - 1, y]);
 					}
 					//X is not mapSizeX - 1, then we can add right (x + 1)
 					if (x < height - 1)
 					{
+						currentNode.canGoRight = true;
 						currentNode.neighbours.Add(nodes[x + 1, y]);
 					}
 					//Y is not 0, then we can add downwards (y - 1 )
 					if (y > 0)
 					{
+						currentNode.canGoBottom = true;
 						currentNode.neighbours.Add(nodes[x, y - 1]);
 					}
 					//Y is not mapSizeY -1, then we can add upwards (y + 1)
 					if (y < width - 1)
 					{
+						currentNode.canGoTop = true;
 						currentNode.neighbours.Add(nodes[x, y + 1]);
 					}
 				}
