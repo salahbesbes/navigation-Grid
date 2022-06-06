@@ -12,7 +12,7 @@ namespace GridNameSpace
 		Destructable,
 		Thick,
 	}
-	class CoverNode
+	public class CoverNode
 	{
 		public CoverTransform CoverTransform;
 		public Node node;
@@ -28,13 +28,9 @@ namespace GridNameSpace
 
 
 
-		public void CalculateDistanceToPlayer(MoveController Player)
+		public void CalculateDistanceToPlayer(Transform Player)
 		{
-			if (Player.curentPositon == null)
-			{
-				Player.curentPositon = Player.ActiveFloor.grid.GetNode(Player.transform);
-			}
-			DistanceToPlayer = Vector3.Distance(node.LocalCoord, Player.curentPositon.LocalCoord);
+			DistanceToPlayer = Vector3.Distance(node.LocalCoord, Player.position);
 		}
 
 		public CoverNode(Node node, CoverTransform CoverTransform)
@@ -45,7 +41,7 @@ namespace GridNameSpace
 		}
 	}
 
-	class CoverTransform : Node
+	public class CoverTransform : Node
 	{
 
 		public List<CoverNode> _coverList = new List<CoverNode>();
@@ -367,7 +363,7 @@ namespace GridNameSpace
 		}
 
 
-		public void GetNodeCoord(Floor floor, out int destinationX, out int destinationY, Camera cam = null)
+		public void GetNodeCoord(Floor floor, LayerMask floorLayer, out int destinationX, out int destinationY, Camera cam = null)
 		{
 
 			// todo: modify tyhis methode to handle nodeSize changes ( now it works only for nodeSize = 1)
@@ -375,7 +371,7 @@ namespace GridNameSpace
 			if (cam == null) cam = Camera.main;
 			Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 			Debug.DrawRay(ray.origin, ray.direction, Color.black);
-			if (Physics.Raycast(ray, out RaycastHit hit, floor.floorLayer))
+			if (Physics.Raycast(ray, out RaycastHit hit, floorLayer))
 			{
 
 				Vector3 worldPosition = ray.GetPoint(hit.distance);

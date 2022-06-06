@@ -2,7 +2,7 @@ Shader "GPUMan/ConeOfSightURP" {
 	Properties{
 		_Color("Color",Color) = (1,1,1,1)
 		_NonVisibleColor("Non Visible Color",Color) = (0,0,0,1)
-		_ViewAngle("Sight Angle", Range(0.01,90)) = 45
+		_ViewAngle("Sight Angle", Range(0.01,360)) = 180
 		_AngleStrength("Angle Strength", Float) = 1
 		_ViewIntervals("Intervals", Range(0, 1)) = 0.0075
 		_ViewIntervalsStep("Intervals Step", Float) = 0.0025

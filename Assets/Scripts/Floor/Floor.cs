@@ -8,7 +8,6 @@ public class Floor : MonoBehaviour
 
 	[Tooltip("By changing the scale of the platform we change the Grid Size")]
 	public LayerMask NodelinkLayer;
-	public LayerMask floorLayer;
 	public LayerMask ObstacleLayer;
 	public LayerMask PortalLayer;
 
@@ -174,6 +173,7 @@ public class Floor : MonoBehaviour
 	private void AddNodeLink(NodeLink nodeLink)
 	{
 		nodeLinks.Add(nodeLink);
+
 	}
 
 	void Update()

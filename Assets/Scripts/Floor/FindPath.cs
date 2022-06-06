@@ -1,6 +1,7 @@
 using GridNameSpace;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public static class FindPath
@@ -99,10 +100,11 @@ public static class FindPath
 	/// <param name="turnPoints"> class variable sent from Grid to save turn Points </param>
 	/// <param name="gridPath"> class variable sent from the Grid to save the Hole path </param>
 	/// <returns> </returns>
-	public static List<Node> getPathToDestination(Node currentUnitNode, Node endUnitNode)
+	public static async Task<List<Node>> getPathToDestination(Node currentUnitNode, Node endUnitNode)
 	{
 
 		//Debug.Log($"start {currentUnitNode} end {endUnitNode}");
+		await Task.Yield();
 		return AStarAlgo(currentUnitNode, endUnitNode);
 	}
 
@@ -136,10 +138,10 @@ public static class FindPath
 		return path;
 	}
 
-	public static List<Vector3> createWayPointOriginal(List<Node> path)
+	public static List<Node> createWayPointOriginal(List<Node> path)
 	{
 		Vector2 oldDirection = Vector2.zero;
-		List<Vector3> wayPoints = new List<Vector3>();
+		List<Node> wayPoints = new List<Node>();
 
 		for (int i = 1; i < path.Count; i++)
 		{
@@ -149,7 +151,7 @@ public static class FindPath
 			Vector2 directionNew = currentNodePos - prevNodePos;
 			if (directionNew != oldDirection)
 			{
-				wayPoints.Add(path[i - 1].LocalCoord);
+				wayPoints.Add(path[i - 1]);
 			}
 
 			oldDirection = directionNew;
@@ -157,7 +159,7 @@ public static class FindPath
 		if (path.Count > 0)
 		{
 
-			Vector3 lastNodeCoord = path[path.Count - 1].LocalCoord;
+			Node lastNodeCoord = path[path.Count - 1];
 			if (wayPoints.Contains(lastNodeCoord) == false)
 			{
 				wayPoints.Add(lastNodeCoord);
@@ -172,7 +174,7 @@ public static class FindPath
 
 
 
-	public static List<Node> getPathToDestination(Vector3[] navmeshPath, Floor floor)
+	public static async Task<List<Node>> getPathToDestination(Vector3[] navmeshPath, Floor floor)
 	{
 		HashSet<Node> path = new HashSet<Node>();
 
@@ -201,7 +203,7 @@ public static class FindPath
 			//FindPath.getPathToDestination(prevNode, node));
 			//Debug.Log($" search the path from {prevNode} to  {node}  {getPathToDestination(prevNode, node).Count}");
 
-			List<Node> tmp = getPathToDestination(prevNode, node);
+			List<Node> tmp = await getPathToDestination(prevNode, node);
 			path.UnionWith(tmp);
 
 			prevNode = node;
