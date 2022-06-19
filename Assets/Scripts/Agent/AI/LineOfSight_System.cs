@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ConeOfSightRenderer : MonoBehaviour
+public class LineOfSight_System : MonoBehaviour
 {
 	private static readonly int sViewDepthTexturedID = Shader.PropertyToID("_ViewDepthTexture");
 	private static readonly int sViewSpaceMatrixID = Shader.PropertyToID("_ViewSpaceMatrix");
@@ -16,7 +16,22 @@ public class ConeOfSightRenderer : MonoBehaviour
 	public LayerMask targetMask;
 	public LayerMask obstacleMask;
 	public Transform[] targetsInViewRadius;
-	public List<Transform> visibleTargets = new List<Transform>();
+	public List<GameObject> visibleTargets = new List<GameObject>();
+
+	SensoryMemory memory = new SensoryMemory(10);
+	AgentManager AiAgent;
+
+
+
+
+
+	public bool HasTarget { get { return memory.BestMemory != null; } }
+	public AiMemory Target { get { return memory.BestMemory; } }
+
+	public void awake(AgentManager agent)
+	{
+		AiAgent = agent;
+	}
 
 	private void Start()
 	{
@@ -29,14 +44,38 @@ public class ConeOfSightRenderer : MonoBehaviour
 		ViewCamera.farClipPlane = ViewDistance;
 		ViewCamera.fieldOfView = ViewAngle;
 
-		transform.localScale = new Vector3(ViewDistance * 2, transform.localScale.y, ViewDistance * 2);
+		transform.localScale = new Vector3(ViewDistance / transform.parent.localScale.x * 2, transform.localScale.y, ViewDistance / transform.parent.localScale.z * 2);
 
 		mMaterial.SetTexture(sViewDepthTexturedID, ViewCamera.targetTexture);
 		mMaterial.SetFloat("_ViewAngle", ViewAngle);
 
-		StartCoroutine(FindTargetsWithDelay(0.1f));
+		StartCoroutine(FindTargetsWithDelay(0.01f));
+
+
 
 	}
+
+
+	private void Update()
+	{
+
+		//memory.updateLineOfSigt(this, gameObject);
+		//memory.ForgetMemories(3);
+		//memory.EvaluateMemories(CalculateScore, visibleTargets);
+
+	}
+
+
+	private void CalculateScore(AiMemory memo)
+	{
+		if (memo == null) return;
+		float distanceScore = (float)memo.distance / ViewDistance;
+		distanceScore = 1 - distanceScore;
+
+
+		memo.score = distanceScore;
+	}
+
 
 	private void LateUpdate()
 	{
@@ -44,6 +83,21 @@ public class ConeOfSightRenderer : MonoBehaviour
 		mMaterial.SetMatrix(sViewSpaceMatrixID, ViewCamera.projectionMatrix * ViewCamera.worldToCameraMatrix);
 	}
 
+	public int Filter(GameObject[] buffer, string LanyerName)
+	{
+		int layer = LayerMask.NameToLayer(LanyerName);
+		int count = 0;
+		foreach (GameObject obj in visibleTargets)
+		{
+			if (obj.layer == layer)
+			{
+				buffer[count++] = obj;
+			}
+			if (buffer.Length == count)
+				break;
+		}
+		return count;
+	}
 
 	IEnumerator FindTargetsWithDelay(float delay)
 	{
@@ -67,7 +121,6 @@ public class ConeOfSightRenderer : MonoBehaviour
 
 
 
-
 			Vector3 targetOffset = Vector3.zero;
 			Vector3 CamOffset = Vector3.zero;
 
@@ -75,13 +128,13 @@ public class ConeOfSightRenderer : MonoBehaviour
 			if (dotprod < 0)
 			{
 
-				targetOffset = Vector3.left * target.transform.GetComponent<Renderer>().bounds.size.x / 1.7f;
+				targetOffset = Vector3.left * target.transform.GetComponent<Renderer>().bounds.size.x / 2.2f;
 				CamOffset = Vector3.right * 0.2f;
 				//Debug.Log($"target {target.name} is on left of the cam, dot {dotprod}");
 			}
 			else
 			{
-				targetOffset = Vector3.right * target.transform.GetComponent<Renderer>().bounds.size.x / 1.7f;
+				targetOffset = Vector3.right * target.transform.GetComponent<Renderer>().bounds.size.x / 2.2f;
 				CamOffset = Vector3.left * 0.2f;
 
 				//Debug.Log($"target {target.name} is on right of the cam dot {dotprod}");
@@ -99,28 +152,28 @@ public class ConeOfSightRenderer : MonoBehaviour
 
 
 			Vector3 dir = modifiedTargerPos - CamPositionModified;
-
+			float distance = dir.magnitude;
 
 			Vector3 DirSameHeightOFTheCam = new Vector3(dir.x, 0, dir.z);
 			//Debug.Log($"old angle is {Vector3.Angle(ViewCamera.transform.forward, dir) } new Angle {Vector3.Angle(ViewCamera.transform.forward, DirSameHeightOFTheCam) }  comp to {ViewAngle / 2}");
-
+			dir = target.transform.position - ViewCamera.transform.position;
 			if (Vector3.Angle(ViewCamera.transform.forward, DirSameHeightOFTheCam) < ViewAngle / 2)
 			{
-				if (Physics.Raycast(CamPositionModified, dir, out RaycastHit hit, obstacleMask))
+				if (Physics.Raycast(ViewCamera.transform.position, dir, out RaycastHit hit, distance, obstacleMask))
 				{
 					// in some cases when no Cover/Obstacle infront of the target this raycas is triggered and the hit is the target itSelf 
+					Debug.DrawLine(ViewCamera.transform.position, ViewCamera.transform.position + dir, Color.black);
 					if (hit.transform.Equals(target))
 					{
 						Debug.Log($" target {target.name} is behid some object {hit.collider.name}");
-						visibleTargets.Add(target);
+						visibleTargets.Add(target.gameObject);
 						continue;
 					}
-					Debug.DrawLine(CamPositionModified, CamPositionModified + dir);
-
+					Debug.Log($"{hit.collider.name}");
 				}
 				else
 				{
-					visibleTargets.Add(target);
+					visibleTargets.Add(target.gameObject);
 				}
 
 			}
@@ -136,7 +189,18 @@ public class ConeOfSightRenderer : MonoBehaviour
 
 		}
 	}
+
+
+
+	//void AddTargetToLineOfSightList(GameObject target)
+	//{
+	//	float distance = (target.transform.position - ViewCamera.transform.position).magnitude;
+
+
+	//	visibleTargets.Add(target);
+	//}
 #if UNITY_EDITOR
+#endif
 
 	public Vector3 DirFromAngle(float angleInDegrees, bool angleIsGlobal)
 	{
@@ -154,11 +218,13 @@ public class ConeOfSightRenderer : MonoBehaviour
 		Gizmos.DrawWireSphere(Vector3.zero, ViewDistance);
 		Gizmos.matrix = Matrix4x4.identity;
 
-		foreach (Transform visibleTarget in visibleTargets)
+
+
+		foreach (GameObject visibleTarget in visibleTargets)
 		{
 
 
-			Transform target = visibleTarget;
+			Transform target = visibleTarget.transform;
 
 
 
@@ -205,10 +271,30 @@ public class ConeOfSightRenderer : MonoBehaviour
 			Gizmos.DrawLine(CamPositionModified, CamPositionModified + dir);
 
 		}
+		float max = int.MinValue;
+
+		foreach (var item in memory.memories)
+		{
+			if (item.score > max)
+				max = item.score;
+		}
 
 
-		Gizmos.DrawWireSphere(transform.position, ViewDistance);
+		foreach (var memo in memory.memories)
+		{
+			Color green = Color.black;
+			green.a = memo.score / max;
+			//green.a = Mathf.Clamp(green.a, 0.3f, 1);
+			Gizmos.color = green;
+			if (memory.BestMemory != null && memory.BestMemory == memo)
+			{
+				Gizmos.color = Color.yellow;
+
+			}
+
+			Gizmos.DrawSphere(memo.posistion + Vector3.down * 0.5f, 0.25f);
+		}
 	}
 
-#endif
+
 }

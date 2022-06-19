@@ -154,7 +154,7 @@ public abstract class System_Movement : MonoBehaviour
 		StopCoroutine("Cross"); crossing = null;
 		StopCoroutine("Move");
 
-		AiAgent.agent.speed = 8;
+		AiAgent.agent.speed = 4f;
 
 
 

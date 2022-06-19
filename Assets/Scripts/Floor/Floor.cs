@@ -247,7 +247,6 @@ public class Floor : MonoBehaviour
 			for (int j = 0; j < grid.width; j++)
 			{
 				//Gizmos.DrawSphere(grid.nodes[i, j].LocalCoord + Vector3.up * 0.2f, 0.45f);
-				//Gizmos.DrawWireCube(grid.nodes[i, j].LocalCoord + Vector3.up * 0.17f, new Vector3(grid.nodeSize, (float)grid.nodeSize / 3, grid.nodeSize) * 0.8f);
 
 				//if (grid.nodes[i, j].canGoLeft == false)
 				//{

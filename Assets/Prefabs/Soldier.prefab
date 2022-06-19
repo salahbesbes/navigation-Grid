@@ -479,8 +479,9 @@ GameObject:
   - component: {fileID: 261422065}
   - component: {fileID: 1738548649}
   - component: {fileID: 1144981981}
+  - component: {fileID: 5979787575741507014}
   - component: {fileID: 1144981979}
-  - component: {fileID: 1144981980}
+  - component: {fileID: 4518309303742304805}
   m_Layer: 0
   m_Name: Soldier
   m_TagString: Untagged
@@ -671,6 +672,22 @@ LineRenderer:
     generateLightingData: 0
   m_UseWorldSpace: 1
   m_Loop: 0
+--- !u!114 &5979787575741507014
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8829711480282772682}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d820a9162d7d3543bd6fa352559dc63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  LocomotionSystem: {fileID: 1144981979}
+  coverSystem: {fileID: 4518309303742304805}
+  agent: {fileID: 5776644802394953070}
+  Target: {fileID: 0}
 --- !u!114 &1144981979
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -683,20 +700,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82f500bd644304443ae35e240f69500d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Player: {fileID: 0}
-  HidableLayers:
+  AiAgent: {fileID: 0}
+  ActiveFloor: {fileID: 0}
+  ActiveNodeLink: {fileID: 0}
+  pressedOnDifferentFloor: 0
+  FloorLayer:
     serializedVersion: 2
-    m_Bits: 256
-  Agent: {fileID: 5776644802394953070}
-  HideSensitivity: 0
-  MinPlayerDistance: 1
-  MinObstacleHeight: 0.15
-  UpdateFrequency: 0.5
-  controller: {fileID: 1144981980}
-  Target: {fileID: 0}
-  offset: {x: 0.97, y: -0.3, z: -1.01}
+    m_Bits: 128
   PatrolPointHolder: {fileID: 0}
---- !u!114 &1144981980
+--- !u!114 &4518309303742304805
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -705,13 +717,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 8829711480282772682}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ca93d2ec3043a5a4e808e16cc700e27e, type: 3}
+  m_Script: {fileID: 11500000, guid: 5e74049b12f65b343a8e56462a5d3f49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ActiveFloor: {fileID: 0}
-  ActiveNodeLink: {fileID: 0}
-  Enemy: {fileID: 0}
-  pressedOnDifferentFloor: 0
+  CoversLayers:
+    serializedVersion: 2
+    m_Bits: 2304
 --- !u!1 &8829711480282810286
 GameObject:
   m_ObjectHideFlags: 0

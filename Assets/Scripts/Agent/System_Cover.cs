@@ -21,6 +21,7 @@ public class System_Cover : MonoBehaviour
 	}
 	public void start(Transform Target)
 	{
+		if (AiAgent.agent.name == "player") return;
 		CoverNode perfectCover = AiAgent.coverSystem.CalculateThePerfectNode(Target);
 		if (perfectCover != null)
 		{
@@ -73,8 +74,7 @@ public class System_Cover : MonoBehaviour
 		BestAvailableCovers = BestAvailableCovers.OrderByDescending(cover => cover.Value)
 							.OrderBy(cover => cover.DistanceToPlayer)
 							.OrderByDescending(cover => cover.CoverTransform.type).ToArray();
-
-		// retrurn 
+		if (BestAvailableCovers.Length == 0) return null;
 		return BestAvailableCovers[0];
 
 	}
@@ -91,10 +91,11 @@ public class System_Cover : MonoBehaviour
 				if (NavMesh.FindClosestEdge(hit.position, out hit, AiAgent.agent.areaMask))
 				{
 					// cover first Cover than create all potential Cover aroyn the CoverTransform
-					Node nodeCov = AiAgent.LocomotionSystem.ActiveFloor.grid.GetNode(hit.position);
-					CoverTransform obj = new CoverTransform(nodeCov.LocalCoord, nodeCov.X, nodeCov.Y, nodeCov.grid, Colliders[i].transform);
+					Node nodeCov = AiAgent.LocomotionSystem.ActiveFloor.grid.GetSafeNode(hit.position);
+					//Instantiate(AiAgent.LocomotionSystem.ActiveFloor.prefab, nodeCov.LocalCoord, Quaternion.identity);
+					CoverTransform obj = new CoverTransform(nodeCov.grid, Colliders[i].transform);
 					CoverNode newCover = new CoverNode(nodeCov, obj);
-					obj.CreatePotentialCover(newCover, null);
+					obj.CreatePotentialCover();
 					coverTransforms.Add(obj);
 				}
 			}
@@ -178,6 +179,220 @@ public class System_Cover : MonoBehaviour
 		}
 	}
 
+	private void OnDrawGizmos()
+	{
+		if (coverTransforms != null)
+		{
+			Gizmos.color = Color.yellow;
+			foreach (var item in coverTransforms)
+			{
+				float width, depth;
+
+				if (item.CoverPosition.rotation.eulerAngles.y % 180 == 0)
+				{
+					width = item.CoverPosition.localScale.x;
+					depth = item.CoverPosition.localScale.z;
+				}
+				else
+				{
+					width = item.CoverPosition.localScale.z;
+					depth = item.CoverPosition.localScale.x;
+				}
 
 
+				Vector3 bottomLeftPoint = new Vector3(item.CoverPosition.position.x - width / 2, item.CoverPosition.position.y, item.CoverPosition.position.z - depth / 2);
+				Vector3 TopLeftPoint = new Vector3(item.CoverPosition.position.x - width / 2, item.CoverPosition.position.y, item.CoverPosition.position.z + depth / 2);
+
+				Vector3 TopRightPoint = new Vector3(TopLeftPoint.x + width, TopLeftPoint.y, TopLeftPoint.z);
+				Vector3 bottomRightPoint = new Vector3(bottomLeftPoint.x + width, bottomLeftPoint.y, bottomLeftPoint.z);
+				Gizmos.color = Color.red;
+
+
+				float offset;
+
+				if (width < 0.5f || depth < 0.5f)
+				{
+					offset = 0.2f;
+				}
+				else
+				{
+					offset = 0.5f;
+				}
+
+				Gizmos.DrawSphere(bottomLeftPoint + new Vector3(-offset, 0, 0), 0.05f);
+				Gizmos.DrawSphere(bottomLeftPoint + new Vector3(0, 0, -offset), 0.05f);
+				Gizmos.DrawSphere(TopLeftPoint + new Vector3(-offset, 0, 0), 0.05f);
+				Gizmos.DrawSphere(TopLeftPoint + new Vector3(0, 0, offset), 0.05f);
+				Gizmos.DrawSphere(TopRightPoint + new Vector3(offset, 0, 0), 0.05f);
+				Gizmos.DrawSphere(TopRightPoint + new Vector3(0, 0, offset), 0.05f);
+				Gizmos.DrawSphere(bottomRightPoint + new Vector3(offset, 0, 0), 0.05f);
+				Gizmos.DrawSphere(bottomRightPoint + new Vector3(0, 0, -offset), 0.05f);
+
+
+				float tmp = TopLeftPoint.z - bottomLeftPoint.z;
+				while (tmp > 1)
+				{
+					Gizmos.color = Color.black;
+					float Zpos = bottomLeftPoint.z + tmp - 1;
+					Zpos += offset;
+
+					Vector3 CoverPos = new Vector3(bottomLeftPoint.x - offset, bottomLeftPoint.y, Zpos);
+					Gizmos.DrawSphere(CoverPos, 0.05f);
+					Gizmos.color = Color.white;
+					Vector3 oppositCver = new Vector3(bottomLeftPoint.x + offset + width, bottomLeftPoint.y, Zpos);
+					Gizmos.DrawSphere(oppositCver, 0.05f);
+
+
+					tmp -= 1;
+				}
+
+
+				tmp = bottomRightPoint.x - bottomLeftPoint.x;
+
+				while (tmp > 1)
+				{
+
+					Gizmos.color = Color.green;
+					float Xpos = bottomLeftPoint.x + tmp - 1;
+					Vector3 CoverPos = new Vector3(Xpos, bottomLeftPoint.y, bottomLeftPoint.z - offset);
+					Gizmos.DrawSphere(CoverPos, 0.05f);
+
+					Gizmos.color = Color.yellow;
+					Vector3 oppositCver = new Vector3(Xpos, bottomLeftPoint.y, bottomLeftPoint.z + offset + depth);
+					Gizmos.DrawSphere(oppositCver, 0.05f);
+
+
+					tmp -= 1;
+				}
+
+			}
+			/*
+			 foreach (var item in coverTransforms)
+				{
+					float width, depth;
+					if (item.CoverPosition.rotation.eulerAngles.y % 180 == 0)
+					{
+						width = item.CoverPosition.localScale.x;
+						depth = item.CoverPosition.localScale.z;
+
+						Vector3 bottomLeftPoint = new Vector3(item.CoverPosition.position.x - width / 2, item.CoverPosition.position.y, item.CoverPosition.position.z - depth / 2);
+						Vector3 TopLeftPoint = new Vector3(item.CoverPosition.position.x - width / 2, item.CoverPosition.position.y, item.CoverPosition.position.z + depth / 2);
+
+						Vector3 TopRightPoint = new Vector3(TopLeftPoint.x + width, TopLeftPoint.y, TopLeftPoint.z);
+						Vector3 bottomRightPoint = new Vector3(bottomLeftPoint.x + width, bottomLeftPoint.y, bottomLeftPoint.z);
+						Gizmos.color = Color.yellow;
+						Gizmos.DrawSphere(bottomLeftPoint, 0.05f);
+						Gizmos.color = Color.red;
+						Gizmos.DrawSphere(TopLeftPoint, 0.05f);
+
+						Gizmos.color = Color.cyan;
+						Gizmos.DrawSphere(TopRightPoint, 0.05f);
+						Gizmos.color = Color.white;
+						Gizmos.DrawSphere(bottomRightPoint, 0.05f);
+
+
+
+						float tmp = TopLeftPoint.z - bottomLeftPoint.z;
+
+						while (tmp > 1)
+						{
+
+							float Zpos = bottomLeftPoint.z + tmp - 1;
+
+							Vector3 CoverPos = new Vector3(bottomLeftPoint.x, bottomLeftPoint.y, Zpos);
+							Gizmos.color = Color.green;
+							Gizmos.DrawSphere(CoverPos, 0.05f);
+
+							Gizmos.color = Color.black;
+							Vector3 oppositCver = new Vector3(bottomLeftPoint.x + width, bottomLeftPoint.y, Zpos);
+							Gizmos.DrawSphere(oppositCver, 0.05f);
+							tmp -= 1;
+						}
+
+
+						tmp = bottomRightPoint.x - bottomLeftPoint.x;
+
+						while (tmp > 1)
+						{
+
+							float Xpos = bottomLeftPoint.x + tmp - 1;
+
+							Vector3 CoverPos = new Vector3(Xpos, bottomLeftPoint.y, bottomLeftPoint.z);
+							Gizmos.color = Color.green;
+							Gizmos.DrawSphere(CoverPos, 0.05f);
+
+							Gizmos.color = Color.black;
+							Vector3 oppositCver = new Vector3(Xpos, bottomLeftPoint.y, bottomLeftPoint.z + depth);
+							Gizmos.DrawSphere(oppositCver, 0.05f);
+							tmp -= 1;
+						}
+					}
+					else
+					{
+
+						width = item.CoverPosition.localScale.z;
+						depth = item.CoverPosition.localScale.x;
+
+						Vector3 bottomLeftPoint = new Vector3(item.CoverPosition.position.x - width / 2, item.CoverPosition.position.y, item.CoverPosition.position.z - depth / 2);
+						Vector3 TopLeftPoint = new Vector3(item.CoverPosition.position.x - width / 2, item.CoverPosition.position.y, item.CoverPosition.position.z + depth / 2);
+
+						Vector3 TopRightPoint = new Vector3(TopLeftPoint.x + width, TopLeftPoint.y, TopLeftPoint.z);
+						Vector3 bottomRightPoint = new Vector3(bottomLeftPoint.x + width, bottomLeftPoint.y, bottomLeftPoint.z);
+						Gizmos.color = Color.yellow;
+						Gizmos.DrawSphere(bottomLeftPoint, 0.05f);
+						Gizmos.color = Color.red;
+						Gizmos.DrawSphere(TopLeftPoint, 0.05f);
+
+						Gizmos.color = Color.cyan;
+						Gizmos.DrawSphere(TopRightPoint, 0.05f);
+						Gizmos.color = Color.white;
+						Gizmos.DrawSphere(bottomRightPoint, 0.05f);
+
+
+
+						float tmp = bottomRightPoint.x - bottomLeftPoint.x;
+
+						while (tmp > 1)
+						{
+
+							float Xpos = bottomLeftPoint.x + tmp - 1;
+
+							Vector3 CoverPos = new Vector3(Xpos, bottomLeftPoint.y, bottomLeftPoint.z);
+							Gizmos.color = Color.green;
+							Gizmos.DrawSphere(CoverPos, 0.05f);
+
+							Gizmos.color = Color.black;
+							Vector3 oppositCver = new Vector3(Xpos, bottomLeftPoint.y, bottomLeftPoint.z + depth);
+							Gizmos.DrawSphere(oppositCver, 0.05f);
+							tmp -= 1;
+						}
+
+					}
+
+
+
+
+
+
+
+
+
+				}
+
+			 */
+
+			if (AiAgent?.LocomotionSystem?.ActiveFloor?.grid == null) return;
+
+
+
+
+			for (int i = 0; i < AiAgent.LocomotionSystem.ActiveFloor.grid.height; i++)
+			{
+				for (int j = 0; j < AiAgent.LocomotionSystem.ActiveFloor.grid.width; j++)
+				{
+					//Gizmos.DrawSphere(grid.nodes[i, j].LocalCoord + Vector3.up * 0.2f, 0.45f);
+				}
+			}
+		}
+	}
 }

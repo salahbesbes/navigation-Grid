@@ -41,7 +41,7 @@ namespace GridNameSpace
 		}
 	}
 
-	public class CoverTransform : Node
+	public class CoverTransform
 	{
 
 		public List<CoverNode> _coverList = new List<CoverNode>();
@@ -52,9 +52,10 @@ namespace GridNameSpace
 		public CoverType type;
 		public float height;
 		public CoverNode BestCoverAvailable { get; set; }
-
-		public CoverTransform(Vector3 localCoord, int x, int y, FloorGrid grid, Transform transform) : base(localCoord, x, y, grid)
+		public FloorGrid grid;
+		public CoverTransform(FloorGrid grid, Transform transform)
 		{
+			this.grid = grid;
 			name = transform.name;
 			id = transform.GetInstanceID();
 			CoverPosition = transform;
@@ -70,67 +71,68 @@ namespace GridNameSpace
 			height = transform.transform.localScale.y;
 		}
 
-
-		public void CreatePotentialCover(CoverNode StartNode, List<Node> alreadyDone)
+		public void CreatePotentialCover()
 		{
+			float width, depth;
 
-			if (alreadyDone == null)
+			if (CoverPosition.rotation.eulerAngles.y % 180 == 0)
 			{
-				alreadyDone = new List<Node>();
+				width = CoverPosition.localScale.x;
+				depth = CoverPosition.localScale.z;
 			}
-			Vector3 offset = Vector3.up * 0.2f;
-			if (StartNode.node.isObstacle)
+			else
 			{
-
-				foreach (Node node in StartNode.node.neighbours)
-				{
-					if (!alreadyDone.Contains(node) && node.isObstacle == false)
-					{
-						CoverNode newCover = new CoverNode(node, StartNode.CoverTransform);
-						CreatePotentialCover(newCover, alreadyDone);
-
-					}
-				}
-				return;
+				width = CoverPosition.localScale.z;
+				depth = CoverPosition.localScale.x;
 			}
+			Vector3 bottomLeftPoint = new Vector3(CoverPosition.position.x - width / 2, CoverPosition.position.y, CoverPosition.position.z - depth / 2);
+			Vector3 TopLeftPoint = new Vector3(CoverPosition.position.x - width / 2, CoverPosition.position.y, CoverPosition.position.z + depth / 2);
 
-			bool potentialcoverExist = false;
+			Vector3 TopRightPoint = new Vector3(TopLeftPoint.x + width, TopLeftPoint.y, TopLeftPoint.z);
+			Vector3 bottomRightPoint = new Vector3(bottomLeftPoint.x + width, bottomLeftPoint.y, bottomLeftPoint.z);
 
-			Vector3[] directions = new Vector3[4] { Vector3.forward, Vector3.back, Vector3.right, Vector3.left };
-			foreach (Vector3 dir in directions)
+			Debug.DrawLine(bottomLeftPoint, bottomLeftPoint + Vector3.up);
+			Debug.DrawLine(TopLeftPoint, bottomLeftPoint + Vector3.up);
+
+
+			float tmp = TopLeftPoint.z - bottomLeftPoint.z;
+
+
+			while (tmp > 1)
 			{
-				Ray ray = new Ray(StartNode.node.LocalCoord + offset, dir);
-				if (Physics.SphereCast(ray, 0.25f, out RaycastHit hit, 1f, grid.floor.ObstacleLayer))
-				{
-					if (hit.transform.GetInstanceID() == id)
-					{
-						//Debug.Log($" {StartNode} is added");
-						CoverList.Add(StartNode);
-						//UpdateBestCover();
-						alreadyDone.Add(StartNode.node);
-						potentialcoverExist = true;
-					}
-				}
 
+				float Zpos = bottomLeftPoint.z + tmp - 1;
+
+				Vector3 CoverPos = new Vector3(bottomLeftPoint.x, bottomLeftPoint.y, Zpos);
+				Debug.DrawLine(CoverPos, CoverPos + Vector3.left);
+				Gizmos.color = Color.black;
+				Vector3 oppositCver = new Vector3(bottomLeftPoint.x + width, bottomLeftPoint.y, Zpos);
+				Debug.DrawLine(oppositCver, oppositCver + Vector3.right);
+
+				tmp -= 1;
 			}
 
 
+			tmp = bottomRightPoint.x - bottomLeftPoint.x;
 
-
-			if (potentialcoverExist == false)
+			while (tmp > 1)
 			{
-				return;
+
+				float Xpos = bottomLeftPoint.x + tmp - 1;
+
+				Vector3 CoverPos = new Vector3(Xpos, bottomLeftPoint.y, bottomLeftPoint.z);
+				Gizmos.color = Color.green;
+				Debug.DrawLine(CoverPos, CoverPos + Vector3.back);
+
+
+				Gizmos.color = Color.black;
+				Vector3 oppositCver = new Vector3(Xpos, bottomLeftPoint.y, bottomLeftPoint.z + depth);
+				Debug.DrawLine(oppositCver, oppositCver + Vector3.forward);
+
+				tmp -= 1;
 			}
 
 
-			foreach (Node node in StartNode.node.neighbours)
-			{
-				if (!alreadyDone.Contains(node))
-				{
-					CoverNode newCover = new CoverNode(node, StartNode.CoverTransform);
-					CreatePotentialCover(newCover, alreadyDone);
-				}
-			}
 
 
 		}
@@ -459,6 +461,39 @@ namespace GridNameSpace
 
 			return GetNode(percentY, percentX);
 		}
+
+		public Node GetSafeNode(Vector3 Pos)
+		{
+			int percentX, percentY;
+			float tmpX, tmpY;
+
+			tmpX = (Pos.z - buttonLeft.z) / nodeSize;
+			tmpY = (Pos.x - buttonLeft.x) / nodeSize;
+
+			percentX = Mathf.RoundToInt(tmpX);
+			percentY = Mathf.RoundToInt(tmpY);
+
+
+			if (percentX < 0)
+			{
+				percentX = 0;
+			}
+			if (percentX >= height)
+			{
+				percentX = height - 1;
+			}
+			if (percentY < 0)
+			{
+				percentY = 0;
+			}
+			if (percentY >= width)
+			{
+				percentY = width - 1;
+			}
+
+			return GetNode(percentX, percentY);
+		}
+
 
 
 		void generateNodes()

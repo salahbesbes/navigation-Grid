@@ -25,14 +25,17 @@ public class System_Movement_NPC : System_Movement
 			nodeLink.Destiation.AddObservable(this);
 		}
 
-		foreach (Transform point in PatrolPointHolder)
+		if (PatrolPointHolder != null)
 		{
-			// for each point get the Floor under them, then get the node they sit on
-			if (Physics.Raycast(point.position, Vector3.down, out RaycastHit hit, FloorLayer))
+			foreach (Transform point in PatrolPointHolder)
 			{
-				hit.transform.TryGetComponent<Floor>(out Floor FloorPoint);
-				if (FloorPoint == null) continue;
-				PatrolPoints.Add(FloorPoint.grid.GetNode(point));
+				// for each point get the Floor under them, then get the node they sit on
+				if (Physics.Raycast(point.position, Vector3.down, out RaycastHit hit, FloorLayer))
+				{
+					hit.transform.TryGetComponent<Floor>(out Floor FloorPoint);
+					if (FloorPoint == null) continue;
+					PatrolPoints.Add(FloorPoint.grid.GetNode(point));
+				}
 			}
 		}
 
@@ -119,12 +122,14 @@ public class System_Movement_NPC : System_Movement
 
 
 
-
-
-		foreach (Transform point in PatrolPointHolder)
+		if (PatrolPointHolder != null)
 		{
-			Gizmos.color = Color.black;
-			Gizmos.DrawRay(point.position, Vector3.down);
+
+			foreach (Transform point in PatrolPointHolder)
+			{
+				Gizmos.color = Color.black;
+				Gizmos.DrawRay(point.position, Vector3.down);
+			}
 		}
 
 

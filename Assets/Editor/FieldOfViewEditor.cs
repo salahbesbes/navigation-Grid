@@ -1,13 +1,13 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(ConeOfSightRenderer))]
+[CustomEditor(typeof(LineOfSight_System))]
 public class FieldOfViewEditor : Editor
 {
 
 	void OnSceneGUI()
 	{
-		ConeOfSightRenderer fow = (ConeOfSightRenderer)target;
+		LineOfSight_System fow = (LineOfSight_System)target;
 		Handles.color = Color.white;
 		Handles.DrawWireArc(fow.transform.position, Vector3.up, Vector3.forward, 360, fow.ViewDistance);
 		Vector3 viewAngleA = fow.DirFromAngle(-fow.ViewAngle / 2, false);
