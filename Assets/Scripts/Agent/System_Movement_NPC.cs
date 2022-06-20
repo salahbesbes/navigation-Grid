@@ -139,16 +139,16 @@ public class System_Movement_NPC : System_Movement
 		{
 			Gizmos.color = Color.black;
 
-			Vector3 dir1 = (AiAgent.Target.position - CoverPos.CoverPosition.position).normalized + Vector3.up * 0;
+			Vector3 dir1 = (AiAgent.Target.position - CoverPos.Transform.position).normalized + Vector3.up * 0;
 
 			Vector3 dir2 = Vector3.zero;
-			if (CoverPos.CoverPosition.localScale.x <= 0.4f)
+			if (CoverPos.Transform.localScale.x <= 0.4f)
 			{
 				// dir2 is the horizental line of the object its fixed becasue the cover does not have so much width
-				Vector3 left = CoverPos.CoverPosition.position - new Vector3(CoverPos.CoverPosition.localScale.z / 2, 0, 0);
-				Vector3 right = CoverPos.CoverPosition.position + new Vector3(CoverPos.CoverPosition.localScale.z / 2, 0, 0);
+				Vector3 left = CoverPos.Transform.position - new Vector3(CoverPos.Transform.localScale.z / 2, 0, 0);
+				Vector3 right = CoverPos.Transform.position + new Vector3(CoverPos.Transform.localScale.z / 2, 0, 0);
 				dir2 = left - right;
-				dir2 = Quaternion.Euler(0, Mathf.Abs(CoverPos.CoverPosition.eulerAngles.y % 360), 0) * dir2;
+				dir2 = Quaternion.Euler(0, Mathf.Abs(CoverPos.Transform.eulerAngles.y % 360), 0) * dir2;
 			}
 			else
 			{
@@ -165,7 +165,7 @@ public class System_Movement_NPC : System_Movement
 			foreach (CoverNode coverNode in CoverPos.CoverList)
 			{
 
-				if (CoverPos.CoverPosition.localScale.x <= 0.4f)
+				if (CoverPos.Transform.localScale.x <= 0.4f)
 				{
 					float playerDot = Vector3.Dot(dir2, dir1);
 					if (playerDot < 0)
@@ -181,7 +181,7 @@ public class System_Movement_NPC : System_Movement
 				}
 
 
-				Vector3 dir3 = (coverNode.node.LocalCoord - CoverPos.CoverPosition.position).normalized;
+				Vector3 dir3 = (coverNode.node.LocalCoord - CoverPos.Transform.position).normalized;
 				dir3.y = dir2.y;
 				float dot = Vector3.Dot(dir2, dir3);
 				Gizmos.color = Color.black;

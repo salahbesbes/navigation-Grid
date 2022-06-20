@@ -8,6 +8,7 @@ namespace GridNameSpace
 	public enum CoverType
 	{
 		None,
+		Thin,
 		Small,
 		Destructable,
 		Thick,
@@ -16,7 +17,7 @@ namespace GridNameSpace
 	{
 		public CoverTransform CoverTransform;
 		public Node node;
-		public float Value;
+		public float Value { get; set; }
 		public float DistanceToPlayer;
 		public bool InMovementRange = true;
 		private bool _available = false;
@@ -33,6 +34,44 @@ namespace GridNameSpace
 			DistanceToPlayer = Vector3.Distance(node.LocalCoord, Player.position);
 		}
 
+		public void SetValue(Transform unit, Transform target)
+		{
+
+			Value = 0;
+
+			// set height value
+			float maxheight = unit.transform.localScale.y * 2;
+			float heightpercent = CoverTransform.Transform.localScale.y / maxheight;
+			heightpercent = Mathf.Clamp01(heightpercent);
+			Value += heightpercent;
+
+			// set CoverType 
+			if (CoverTransform.type == CoverType.Small)
+			{
+				Value += 0.25f;
+			}
+			else if (CoverTransform.type == CoverType.Thick)
+			{
+				Value += 0.5f;
+			}
+			else if (CoverTransform.type == CoverType.Thin)
+			{
+				Value += 0.2f;
+			}
+
+			// set Cover Distance (suppose max range weapon is 10)
+			float maxWeaponDistance = 10f;
+
+			DistanceToPlayer = Mathf.Clamp(Vector3.Distance(node.LocalCoord, target.position), 0, 10);
+			float distancePercent = 1 - (DistanceToPlayer) / maxWeaponDistance;
+			Value += distancePercent;
+
+
+			// TODO: average ( we need to found other methode, solution to calculate the average ) 
+			Value = Value / 3;
+
+		}
+
 		public CoverNode(Node node, CoverTransform CoverTransform)
 		{
 			this.node = node;
@@ -40,27 +79,45 @@ namespace GridNameSpace
 
 		}
 	}
-
+	[Serializable]
 	public class CoverTransform
 	{
 
-		public List<CoverNode> _coverList = new List<CoverNode>();
-		public List<CoverNode> CoverList { get { return _coverList; } }
+		public HashSet<CoverNode> _coverList = new HashSet<CoverNode>();
+		public HashSet<CoverNode> CoverList { get { return _coverList; } }
 		public string name = "default";
 		public int id = 0;
-		public Transform CoverPosition;
+		public Transform Transform;
 		public CoverType type;
-		public float height;
+		public float height { get; set; }
 		public CoverNode BestCoverAvailable { get; set; }
 		public FloorGrid grid;
+		public Vector3 HorozentalAxe { get; private set; }
+
+		public Vector3 VerticalAxe { get; private set; }
+		public bool isVertical { get; internal set; }
+
+
+		public Vector3 bottomLeftPoint { get; private set; }
+		public Vector3 TopLeftPoint { get; private set; }
+		public Vector3 TopRightPoint { get; private set; }
+		public Vector3 bottomRightPoint { get; private set; }
+		public float width { get; private set; }
+		public float depth { get; private set; }
+
 		public CoverTransform(FloorGrid grid, Transform transform)
 		{
 			this.grid = grid;
 			name = transform.name;
 			id = transform.GetInstanceID();
-			CoverPosition = transform;
+			Transform = transform;
 			//float volume = transform.localScale.x * transform.localScale.z * transform.localScale.y;
-			if (transform.localScale.x < 0.5f || transform.localScale.z < 0.5f)
+
+			if (Mathf.Min(Transform.localScale.x, Transform.localScale.z) <= 0.4f)
+			{
+				type = CoverType.Thin;
+			}
+			else if (Mathf.Max(Transform.localScale.x, Transform.localScale.z) < 2.5f)
 			{
 				type = CoverType.Small;
 			}
@@ -69,69 +126,72 @@ namespace GridNameSpace
 				type = CoverType.Thick;
 			}
 			height = transform.transform.localScale.y;
-		}
 
-		public void CreatePotentialCover()
-		{
-			float width, depth;
-
-			if (CoverPosition.rotation.eulerAngles.y % 180 == 0)
+			if (Transform.rotation.eulerAngles.y % 180 == 0)
 			{
-				width = CoverPosition.localScale.x;
-				depth = CoverPosition.localScale.z;
+				width = Transform.localScale.x;
+				depth = Transform.localScale.z;
 			}
 			else
 			{
-				width = CoverPosition.localScale.z;
-				depth = CoverPosition.localScale.x;
+				width = Transform.localScale.z;
+				depth = Transform.localScale.x;
 			}
-			Vector3 bottomLeftPoint = new Vector3(CoverPosition.position.x - width / 2, CoverPosition.position.y, CoverPosition.position.z - depth / 2);
-			Vector3 TopLeftPoint = new Vector3(CoverPosition.position.x - width / 2, CoverPosition.position.y, CoverPosition.position.z + depth / 2);
+			bottomLeftPoint = new Vector3(Transform.position.x - width / 2, Transform.position.y, Transform.position.z - depth / 2);
+			TopLeftPoint = new Vector3(Transform.position.x - width / 2, Transform.position.y, Transform.position.z + depth / 2);
 
-			Vector3 TopRightPoint = new Vector3(TopLeftPoint.x + width, TopLeftPoint.y, TopLeftPoint.z);
-			Vector3 bottomRightPoint = new Vector3(bottomLeftPoint.x + width, bottomLeftPoint.y, bottomLeftPoint.z);
-
-			Debug.DrawLine(bottomLeftPoint, bottomLeftPoint + Vector3.up);
-			Debug.DrawLine(TopLeftPoint, bottomLeftPoint + Vector3.up);
+			TopRightPoint = new Vector3(TopLeftPoint.x + width, TopLeftPoint.y, TopLeftPoint.z);
+			bottomRightPoint = new Vector3(bottomLeftPoint.x + width, bottomLeftPoint.y, bottomLeftPoint.z);
 
 
-			float tmp = TopLeftPoint.z - bottomLeftPoint.z;
+
+		}
+
+		public void CreateNewCoverSpot(Vector3 position)
+		{
+			Node node = grid.GetNode(position);
+			if (node == null) return;
+			CoverList.Add(new CoverNode(node, this));
+		}
 
 
-			while (tmp > 1)
+		public void CreatePotentialCover(CoverTransform CoverTransform, float offset)
+		{
+
+			float tmp = CoverTransform.TopLeftPoint.z - CoverTransform.bottomLeftPoint.z;
+			while (tmp > 0.7f)
+			{
+				float Zpos = CoverTransform.bottomLeftPoint.z + tmp - 0.7f;
+				Zpos += offset;
+
+				Vector3 CoverPos = new Vector3(CoverTransform.bottomLeftPoint.x - offset, CoverTransform.bottomLeftPoint.y, Zpos);
+
+				CoverTransform.CreateNewCoverSpot(CoverPos);
+
+
+				Vector3 oppositCver = new Vector3(CoverTransform.bottomLeftPoint.x + offset + CoverTransform.width, CoverTransform.bottomLeftPoint.y, Zpos);
+				CoverTransform.CreateNewCoverSpot(oppositCver);
+
+
+				tmp -= 0.7f;
+			}
+
+
+			tmp = CoverTransform.bottomRightPoint.x - CoverTransform.bottomLeftPoint.x;
+
+			while (tmp > 0.7f)
 			{
 
-				float Zpos = bottomLeftPoint.z + tmp - 1;
+				float Xpos = CoverTransform.bottomLeftPoint.x + tmp - 0.7f;
+				Vector3 CoverPos = new Vector3(Xpos, CoverTransform.bottomLeftPoint.y, CoverTransform.bottomLeftPoint.z - offset);
+				CoverTransform.CreateNewCoverSpot(CoverPos);
 
-				Vector3 CoverPos = new Vector3(bottomLeftPoint.x, bottomLeftPoint.y, Zpos);
-				Debug.DrawLine(CoverPos, CoverPos + Vector3.left);
-				Gizmos.color = Color.black;
-				Vector3 oppositCver = new Vector3(bottomLeftPoint.x + width, bottomLeftPoint.y, Zpos);
-				Debug.DrawLine(oppositCver, oppositCver + Vector3.right);
+				Vector3 oppositCver = new Vector3(Xpos, CoverTransform.bottomLeftPoint.y, CoverTransform.bottomLeftPoint.z + offset + CoverTransform.depth);
+				CoverTransform.CreateNewCoverSpot(oppositCver);
 
-				tmp -= 1;
+
+				tmp -= 0.7f;
 			}
-
-
-			tmp = bottomRightPoint.x - bottomLeftPoint.x;
-
-			while (tmp > 1)
-			{
-
-				float Xpos = bottomLeftPoint.x + tmp - 1;
-
-				Vector3 CoverPos = new Vector3(Xpos, bottomLeftPoint.y, bottomLeftPoint.z);
-				Gizmos.color = Color.green;
-				Debug.DrawLine(CoverPos, CoverPos + Vector3.back);
-
-
-				Gizmos.color = Color.black;
-				Vector3 oppositCver = new Vector3(Xpos, bottomLeftPoint.y, bottomLeftPoint.z + depth);
-				Debug.DrawLine(oppositCver, oppositCver + Vector3.forward);
-
-				tmp -= 1;
-			}
-
 
 
 
