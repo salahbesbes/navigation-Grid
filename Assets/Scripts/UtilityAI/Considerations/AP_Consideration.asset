@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0678f5c884e24d045b511ebac5a87971, type: 3}
+  m_Name: AP_Consideration
+  m_EditorClassIdentifier: 
+  Name: Action Point
+  Responsecurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: -0.29995093
+      outSlope: -0.008014462
+      tangentMode: 65
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.14739536
+    - serializedVersion: 3
+      time: 0.36591452
+      value: 0.9970674
+      inSlope: -0.008014462
+      outSlope: 0.07155234
+      tangentMode: 5
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.91307324
+    - serializedVersion: 3
+      time: 0.5350059
+      value: 0.665381
+      inSlope: -3.4269032
+      outSlope: -3.1411948
+      tangentMode: 1
+      weightedMode: 2
+      inWeight: 0.2299331
+      outWeight: 0.13241917
+    - serializedVersion: 3
+      time: 0.99891496
+      value: 0.5093997
+      inSlope: -0.025033265
+      outSlope: 0
+      tangentMode: 1
+      weightedMode: 1
+      inWeight: 0.647239
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4

@@ -22,7 +22,10 @@ namespace TL.UtilityAI
 		{
 			score = 0;
 		}
-
+		private void OnEnable()
+		{
+			score = 0;
+		}
 		public abstract void Execute(AgentManager npc);
 
 		public override string ToString()

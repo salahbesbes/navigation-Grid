@@ -13,3 +13,54 @@ MonoBehaviour:
   m_Name: AimConsideration
   m_EditorClassIdentifier: 
   Name: Aim Consideration
+  Responsecurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.19908834
+      value: 1.0007906
+      inSlope: 0.0039710817
+      outSlope: -0.7486246
+      tangentMode: 5
+      weightedMode: 2
+      inWeight: 0.33333334
+      outWeight: 1
+    - serializedVersion: 3
+      time: 0.34112003
+      value: 0.5059976
+      inSlope: -3.5352464
+      outSlope: -3.5352464
+      tangentMode: 0
+      weightedMode: 3
+      inWeight: 0.5456797
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.5305873
+      value: 0.26315552
+      inSlope: -0.28154504
+      outSlope: -0.28154504
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.9948397
+      value: 0.21714264
+      inSlope: -0.08851049
+      outSlope: -0.08851049
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.26282835
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4

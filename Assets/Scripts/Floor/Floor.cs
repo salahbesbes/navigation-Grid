@@ -180,8 +180,8 @@ public class Floor : MonoBehaviour
 	{
 		//if (grid == null || grid.nodes == null) return;
 
-		UpdateNodes();
 		grid.Reset();
+		UpdateNodes();
 	}
 
 

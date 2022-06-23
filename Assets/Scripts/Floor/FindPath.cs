@@ -1,7 +1,6 @@
 using GridNameSpace;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 
 public static class FindPath
@@ -100,11 +99,9 @@ public static class FindPath
 	/// <param name="turnPoints"> class variable sent from Grid to save turn Points </param>
 	/// <param name="gridPath"> class variable sent from the Grid to save the Hole path </param>
 	/// <returns> </returns>
-	public static async Task<List<Node>> getPathToDestination(Node currentUnitNode, Node endUnitNode)
+	public static List<Node> getPathToDestination(Node currentUnitNode, Node endUnitNode)
 	{
 
-		//Debug.Log($"start {currentUnitNode} end {endUnitNode}");
-		await Task.Yield();
 		return AStarAlgo(currentUnitNode, endUnitNode);
 	}
 
@@ -116,6 +113,8 @@ public static class FindPath
 	/// <param name="DestinationNode"> destiation </param>
 	public static List<Node> getThePath(Node startNode, Node DestinationNode)
 	{
+		//Debug.Log($"find path from {startNode} to {DestinationNode}");
+
 		Node Current = DestinationNode;
 		// delete previous path
 		List<Node> path = new List<Node>();
@@ -129,6 +128,12 @@ public static class FindPath
 			path.Add(Current);
 			Current = Current.parent;
 			//tmp.color = Color.green;
+			pathCost++;
+			if (pathCost >= 100)
+			{
+				Debug.Log($" endless loop cant find path ");
+				break;
+			}
 		}
 		path.Add(startNode);
 		path.Reverse();
@@ -174,7 +179,7 @@ public static class FindPath
 
 
 
-	public static async Task<List<Node>> getPathToDestination(Vector3[] navmeshPath, Floor floor)
+	public static List<Node> getPathToDestination(Vector3[] navmeshPath, Floor floor)
 	{
 		HashSet<Node> path = new HashSet<Node>();
 
@@ -183,7 +188,17 @@ public static class FindPath
 		for (int i = 0; i < navmeshPath.Length; i++)
 		{
 			Node node = floor.grid.GetNode(navmeshPath[i]);
-			if (node == null) break;
+
+			if (node.X == 4 && node.Y == 3)
+			{
+				Debug.Log($"{node.isObstacle}");
+			}
+			//Debug.Log($"{node}");
+			if (node == null)
+			{
+				Debug.Log($"node is null");
+				break;
+			}
 			else
 			{
 				//node = getClosestNeighbor(node, prevNode);
@@ -192,7 +207,6 @@ public static class FindPath
 			}
 
 		}
-
 		List<Node> result = new List<Node>(path);
 
 		path.Clear();
@@ -203,13 +217,13 @@ public static class FindPath
 			//FindPath.getPathToDestination(prevNode, node));
 			//Debug.Log($" search the path from {prevNode} to  {node}  {getPathToDestination(prevNode, node).Count}");
 
-			List<Node> tmp = await getPathToDestination(prevNode, node);
+			List<Node> tmp = getPathToDestination(prevNode, node);
+
 			path.UnionWith(tmp);
 
 			prevNode = node;
 
 		}
-
 		return path.ToList();
 	}
 

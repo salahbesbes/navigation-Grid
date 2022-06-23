@@ -7,8 +7,10 @@ namespace TL.UtilityAI
 	public abstract class Consideration : ScriptableObject
 	{
 		public string Name;
+		[SerializeField] protected AnimationCurve Responsecurve;
 
 		private float _score;
+		[SerializeField]
 		public float score
 		{
 			get { return _score; }
@@ -23,7 +25,13 @@ namespace TL.UtilityAI
 			score = 0;
 		}
 
-		public abstract float ScoreConsideration();
+		public abstract float ScoreConsideration(AgentManager agent);
+
+		protected float RoundFloat(float value, int nb)
+		{
+			float power = Mathf.Pow(10, nb);
+			return Mathf.Round(value * power) * (1 / power);
+		}
 	}
 }
 

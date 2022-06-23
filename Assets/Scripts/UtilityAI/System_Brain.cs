@@ -43,8 +43,9 @@ namespace UtilityAI
 					nextBestActionIndex = i;
 					score = actionsAvailable[i].score;
 				}
+				Debug.Log($" {actionsAvailable[i]} => score {actionsAvailable[i].score}");
 			}
-
+			Debug.Log($"   best action {actionsAvailable[nextBestActionIndex]} with score {actionsAvailable[nextBestActionIndex].score}");
 			bestAction = actionsAvailable[nextBestActionIndex];
 			bestAction.Execute(npc);
 		}
@@ -57,7 +58,7 @@ namespace UtilityAI
 			float score = 1f;
 			for (int i = 0; i < action.considerations.Length; i++)
 			{
-				float considerationScore = action.considerations[i].ScoreConsideration();
+				float considerationScore = action.considerations[i].ScoreConsideration(npc);
 				score *= considerationScore;
 
 				if (score == 0)

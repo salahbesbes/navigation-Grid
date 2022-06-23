@@ -15,3 +15,4 @@ MonoBehaviour:
   Name: shootAction
   considerations:
   - {fileID: 11400000, guid: b8e842b103f209d42bb2e3b62d8a2eaa, type: 2}
+  - {fileID: 11400000, guid: aa11019377be0ec49a635fb81ed14bd1, type: 2}

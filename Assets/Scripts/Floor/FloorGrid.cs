@@ -18,7 +18,6 @@ namespace GridNameSpace
 		public CoverTransform CoverTransform;
 		public Node node;
 		public float Value { get; set; }
-		public float DistanceToPlayer;
 		public bool InMovementRange = true;
 		private bool _available = false;
 		public bool Available
@@ -26,13 +25,7 @@ namespace GridNameSpace
 			get => _available;
 			set => _available = value;
 		}
-
-
-
-		public void CalculateDistanceToPlayer(Transform Player)
-		{
-			DistanceToPlayer = Vector3.Distance(node.LocalCoord, Player.position);
-		}
+		public float AimPercent { get; set; }
 
 		public void SetValue(Transform unit, Transform target)
 		{
@@ -62,7 +55,7 @@ namespace GridNameSpace
 			// set Cover Distance (suppose max range weapon is 10)
 			float maxWeaponDistance = 10f;
 
-			DistanceToPlayer = Mathf.Clamp(Vector3.Distance(node.LocalCoord, target.position), 0, 10);
+			float DistanceToPlayer = Mathf.Clamp(Vector3.Distance(node.LocalCoord, target.position), 0, 10);
 			float distancePercent = 1 - (DistanceToPlayer) / maxWeaponDistance;
 			Value += distancePercent;
 
@@ -78,6 +71,65 @@ namespace GridNameSpace
 			this.CoverTransform = CoverTransform;
 
 		}
+
+
+		public float getweaponPenaltyPenalty(Transform target, Gun weapon)
+		{
+
+			float TargetWeaponPenalty = 0;
+			// suppose the perfect range of the weapon is 3m => 
+			/*
+			 *  if distance to target <= 3 => no penalty of the aim
+			 *  else if distance to target > 3 => we apply penalty 
+			 *  suppose penalty is fixed to 0.3
+			 */
+			float perfectShotDistance = 5;
+
+
+			float Cover_Target_Distance = Vector3.Distance(node.LocalCoord, target.transform.position); ;
+
+			if (weapon.type == WeaponType.shortRange)
+			{
+
+				if (Cover_Target_Distance <= perfectShotDistance)
+				{
+					TargetWeaponPenalty = 0;
+				}
+				else
+				{
+					TargetWeaponPenalty = 0.3f;
+				}
+
+			}
+			return TargetWeaponPenalty;
+		}
+
+		public float getCoverTypePenalty(Transform unit)
+		{
+			float Value = 0;
+			float maxheight = unit.transform.GetComponent<Renderer>().bounds.size.y;
+			float coverheight = CoverTransform.Transform.GetComponent<Renderer>().bounds.size.y;
+
+			float heightpercent = coverheight / maxheight;
+			heightpercent = Mathf.Clamp01(heightpercent);
+			Value += heightpercent;
+
+			// set CoverType 
+			if (CoverTransform.type == CoverType.Small)
+			{
+				Value += 0.25f;
+			}
+			else if (CoverTransform.type == CoverType.Thick)
+			{
+				Value += 0.5f;
+			}
+			else if (CoverTransform.type == CoverType.Thin)
+			{
+				Value += 0.2f;
+			}
+			return Value / 2;
+		}
+
 	}
 	[Serializable]
 	public class CoverTransform
@@ -112,7 +164,6 @@ namespace GridNameSpace
 			id = transform.GetInstanceID();
 			Transform = transform;
 			//float volume = transform.localScale.x * transform.localScale.z * transform.localScale.y;
-
 			if (Mathf.Min(Transform.localScale.x, Transform.localScale.z) <= 0.4f)
 			{
 				type = CoverType.Thin;
@@ -151,6 +202,12 @@ namespace GridNameSpace
 		{
 			Node node = grid.GetNode(position);
 			if (node == null) return;
+
+			List<Node> allNodesInCoverList = CoverList.Select(el => el.node).ToList();
+
+			if (allNodesInCoverList.Contains(node)) return;
+
+
 			CoverList.Add(new CoverNode(node, this));
 		}
 
@@ -197,29 +254,42 @@ namespace GridNameSpace
 
 		}
 
-		public void UpdateBestCover()
-		{
-			if (CoverList?.Count == 0)
-			{
-				BestCoverAvailable = null;
-				return;
-			}
+		//public void UpdateBestCover()
+		//{
+		//	if (CoverList?.Count == 0)
+		//	{
+		//		BestCoverAvailable = null;
+		//		return;
+		//	}
 
-			CoverNode[] AvailableCovers = (from cover in CoverList
-						       where cover != null && cover.Available && cover.InMovementRange
-						       select cover).ToArray();
-			//Array.Sort(AvailableCovers, new CoverType[3] { CoverType.Thick, CoverType.Destructable, CoverType.Small });
+		//	CoverNode[] AvailableCovers = (from cover in CoverList
+		//				       where cover != null && cover.Available && cover.InMovementRange
+		//				       select cover).ToArray();
+		//	//Array.Sort(AvailableCovers, new CoverType[3] { CoverType.Thick, CoverType.Destructable, CoverType.Small });
 
-			AvailableCovers = AvailableCovers.OrderByDescending(cover => cover.Value)
-							.OrderBy(cover => cover.DistanceToPlayer).ToArray();
+		//	AvailableCovers = AvailableCovers.OrderByDescending(cover => cover.Value)
+		//					.OrderBy(cover => cover.DistanceToPlayer).ToArray();
 
-			// return 
-			BestCoverAvailable = AvailableCovers[0];
+		//	// return 
+		//	BestCoverAvailable = AvailableCovers[0];
 
 
-		}
+		//}
 	}
 
+	public class RangeNode
+	{
+		public Node node;
+		public bool firstRange { get => _firstRanage; set { _firstRanage = value; SecondRange = !value; } }
+		public bool SecondRange { get; set; }
+		private bool _firstRanage = false;
+
+		public RangeNode(Node node, bool isInFirstRange)
+		{
+			this.node = node;
+			firstRange = isInFirstRange;
+		}
+	}
 
 	public class Node : AStarNode
 	{

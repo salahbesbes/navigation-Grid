@@ -5,13 +5,21 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
 
+interface IBehaviour
+{
+	public void start();
+	public void awake(AgentManager agent);
+	public void update();
+
+}
+
 [RequireComponent(typeof(AgentManager))]
-public abstract class System_Movement : MonoBehaviour
+public abstract class System_Movement : MonoBehaviour, IBehaviour
 {
 	[HideInInspector]
 	public AgentManager AiAgent;
 	public static readonly int sSpeedHash = Animator.StringToHash("Speed");
-
+	public HashSet<RangeNode> NodeInRange = new HashSet<RangeNode>();
 
 
 	public void updateProperties()
@@ -36,18 +44,16 @@ public abstract class System_Movement : MonoBehaviour
 	public bool pressedOnDifferentFloor;
 
 	public LayerMask FloorLayer;
-	public abstract void awake(AgentManager agent);
-
-	public abstract void start();
 
 
-	public async void StartMoving(Node destination)
+
+	public void StartMoving(Node destination)
 	{
 		curentPositon = ActiveFloor.grid.GetNode(transform);
 
 		if (destination == null)
 		{
-			Debug.Log($"cant move,  Destination is null");
+			//Debug.Log($"cant move,  Destination is null");
 			return;
 		}
 		if (curentPositon == null)
@@ -58,10 +64,8 @@ public abstract class System_Movement : MonoBehaviour
 		NavMeshPath navMeshPath = new NavMeshPath();
 
 		AiAgent.agent.CalculatePath(destination.LocalCoord, navMeshPath);
-		lr.positionCount = navMeshPath.corners.Length;
-		lr.SetPositions(navMeshPath.corners);
 
-		path = await FindPath.getPathToDestination(navMeshPath.corners, ActiveFloor);
+		path = FindPath.getPathToDestination(navMeshPath.corners, ActiveFloor);
 
 		if (path.Count == 0)
 		{
@@ -69,6 +73,8 @@ public abstract class System_Movement : MonoBehaviour
 			return;
 		}
 		List<Node> optimizedPath = FindPath.createWayPointOriginal(path);
+		lr.positionCount = optimizedPath.Count;
+		lr.SetPositions(optimizedPath.Select(el => el.LocalCoord).ToArray());
 		StartCoroutine(Move(optimizedPath));
 	}
 
@@ -174,7 +180,6 @@ public abstract class System_Movement : MonoBehaviour
 		//mAnimator.SetFloat(sSpeedHash, AiAgent.agent.speed);
 		yield return new WaitUntil(() =>
 		{
-
 			//Debug.Log($"index {Index} distance ={Vector3.Distance(wordSpacePath[Index] + Vector3.up * AiAgent.agent.baseOffset, AiAgent.agent.transform.position)} agen radius {AiAgent.agent.radius}  comp is {Vector3.Distance(wordSpacePath[Index] + Vector3.up * AiAgent.agent.baseOffset, AiAgent.agent.transform.position) <= AiAgent.agent.radius}");
 			return path[Index] == curentPositon;
 			//return Vector3.Distance(path[Index] + Vector3.up * AiAgent.agent.baseOffset, AiAgent.agent.transform.position) <= AiAgent.agent.radius;
@@ -240,4 +245,19 @@ public abstract class System_Movement : MonoBehaviour
 	}
 
 	public abstract void AgentInputSystem();
+
+	public virtual void start()
+	{
+		throw new System.NotImplementedException();
+	}
+
+	public virtual void awake(AgentManager agent)
+	{
+		throw new System.NotImplementedException();
+	}
+
+	public virtual void update()
+	{
+		throw new System.NotImplementedException();
+	}
 }

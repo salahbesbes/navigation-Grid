@@ -11,6 +11,11 @@ public class AgentManager : MonoBehaviour
 	public NavMeshAgent agent;
 	public Transform Target;
 	public System_Brain brain;
+	public Gun weapon;
+	public Stats stats;
+
+
+
 
 	internal void OnFinishedAction()
 	{
@@ -19,11 +24,12 @@ public class AgentManager : MonoBehaviour
 	private void Awake()
 	{
 		agent = GetComponent<NavMeshAgent>();
-
+		stats = GetComponent<Stats>();
 		LocomotionSystem.awake(this);
 		coverSystem?.awake(this);
 		lineOfSight?.awake(this);
 		brain?.awake(this);
+		weapon?.awake(this);
 
 	}
 	private void Start()
@@ -33,11 +39,10 @@ public class AgentManager : MonoBehaviour
 	}
 
 
-
 	private void Update()
 	{
-		LocomotionSystem.updateProperties();
-		LocomotionSystem.AgentInputSystem();
+
+		LocomotionSystem.update();
 		//Debug.Log($"{lineOfSight?.Target?.gameobject?.name}");
 
 	}

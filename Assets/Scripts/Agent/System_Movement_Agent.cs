@@ -1,11 +1,10 @@
 ﻿using GridNameSpace;
 using UnityEngine;
-
 public class System_Movement_Agent : System_Movement
 {
 	public override void awake(AgentManager agent)
 	{
-		lr = GetComponent<LineRenderer>();
+		//lr = GetComponent<LineRenderer>();
 		mAnimator = GetComponent<Animator>();
 		AiAgent = agent;
 	}
@@ -83,5 +82,9 @@ public class System_Movement_Agent : System_Movement
 		}
 	}
 
-
+	public override void update()
+	{
+		updateProperties();
+		AgentInputSystem();
+	}
 }

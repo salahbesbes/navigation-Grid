@@ -5,7 +5,7 @@
 namespace TL.UtilityAI.Actions
 {
 	[CreateAssetMenu(fileName = "Shoot", menuName = "UtilityAI/Actions/Shoot")]
-	public class ShootAction : Action
+	public class Action_Shoot : Action
 	{
 		public override void Execute(AgentManager npc)
 		{

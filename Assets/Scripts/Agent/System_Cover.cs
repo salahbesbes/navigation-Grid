@@ -1,10 +1,8 @@
 ﻿using GridNameSpace;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
-
+using UnityEngine.UI;
 
 [RequireComponent(typeof(AgentManager)), ExecuteInEditMode]
 public class System_Cover : MonoBehaviour
@@ -12,8 +10,19 @@ public class System_Cover : MonoBehaviour
 	public LayerMask CoversLayers;
 	private Collider[] Colliders = new Collider[10]; // more is less performant, but more options
 	public List<CoverTransform> coverTransforms { get; set; } = new List<CoverTransform>();
+
+	bool alreadCreated = false;
 	private AgentManager AiAgent;
 	public HashSet<CoverNode> AvailableCover = new HashSet<CoverNode>();
+	public HashSet<CoverNode> FlunkedCoverSpot = new HashSet<CoverNode>();
+
+
+
+	public bool showAimPercent;
+	public GameObject aimPrefab;
+	public Transform parentCanvas;
+
+
 
 	[SerializeField]
 	public bool ShowCreationSports = false;
@@ -31,113 +40,49 @@ public class System_Cover : MonoBehaviour
 
 
 	}
+	private void AddFlunckedSpot(CoverNode cover)
+	{
+
+		cover.Available = false;
+		cover.Value = 0;
+		FlunkedCoverSpot.Add(cover);
+
+
+	}
+
+
 	public void awake(AgentManager agent)
 	{
 		AiAgent = agent;
 	}
 	public void start(Transform Target)
 	{
-		if (AiAgent.agent.name == "player") return;
-		CoverNode perfectCover = AiAgent.coverSystem.CalculateThePerfectNode();
-		if (perfectCover != null)
-		{
-			Debug.Log($"perfect node {perfectCover?.node}");
-			Instantiate(AiAgent.LocomotionSystem.ActiveFloor.prefab, perfectCover.node.LocalCoord + Vector3.up, Quaternion.identity).GetComponent<Renderer>().material.color = Color.yellow;
-		}
-	}
-	public CoverNode CalculateThePerfectNode()
-	{
 		AvailableCover.Clear();
 		GetAllCoverInRange();
-
-		return GetPerfectNode();
 	}
-	//private void Update()
-	//{
-	//	CoverNode perfectCover = AiAgent.coverSystem.CalculateThePerfectNode(AiAgent.Target);
-	//	if (perfectCover != null)
-	//	{
-	//		Debug.Log($"perfect node {perfectCover?.node}");
-	//		Instantiate(AiAgent.LocomotionSystem.ActiveFloor.prefab, perfectCover.node.LocalCoord + Vector3.up, Quaternion.identity).GetComponent<Renderer>().material.color = Color.yellow;
-	//	}
-	//}
-
-	//private CoverNode GetPerfectCover(HashSet<CoverTransform> coverTransforms)
-	//{
-	//	if (coverTransforms?.Count == 0) return null;
-
-
-	//	//Array.Sort(coverTransforms.ToArray(), new CoverType[3] { CoverType.Thick, CoverType.Destructable, CoverType.Small });
-	//	var SortedCoverTransforms = coverTransforms.OrderByDescending(cover => cover.height)
-	//						.OrderBy(cover => cover.type).ToArray();
-
-
-
-	//	HashSet<CoverNode> bestNodesOfTtransforms = new HashSet<CoverNode>();
-	//	foreach (CoverTransform cover in SortedCoverTransforms)
-	//	{
-	//		bestNodesOfTtransforms.Add(cover.BestCoverAvailable);
-	//		if (cover.BestCoverAvailable != null)
-	//		{
-	//			Instantiate(AiAgent.LocomotionSystem.ActiveFloor.prefab, cover.BestCoverAvailable.node.LocalCoord + Vector3.up * 0.5f, Quaternion.identity);
-
-	//		}
-
-	//	}
-
-
-
-
-
-	//	CoverNode[] BestAvailableCovers = (from cover in bestNodesOfTtransforms
-	//					   where cover != null && cover.Available && cover.InMovementRange
-	//					   select cover).ToArray();
-
-	//	//Array.Sort(BestAvailableCovers, new CoverType[3] { CoverType.Thick, CoverType.Destructable, CoverType.Small });
-
-
-	//	BestAvailableCovers = BestAvailableCovers.OrderByDescending(cover => cover.Value)
-	//						.OrderBy(cover => cover.DistanceToPlayer)
-	//						.OrderByDescending(cover => cover.CoverTransform.type).ToArray();
-	//	if (BestAvailableCovers.Length == 0) return null;
-	//	return BestAvailableCovers[0];
-
-	//}
-
-	void GetCoverTransformInRange(Transform Target)
+	public CoverNode CalculateThePerfectoffensive()
 	{
+		AvailableCover.Clear();
+		FlunkedCoverSpot.Clear();
+		GetAllCoverInRange();
 
-		int Hits = Physics.OverlapSphereNonAlloc(AiAgent.agent.transform.position, 10, Colliders, CoversLayers); // 10 is radius of vision
-		for (int i = 0; i < Hits; i++)
-		{
-			CoverTransform obj = new CoverTransform(AiAgent.LocomotionSystem.ActiveFloor.grid, Colliders[i].transform);
-			obj.CreatePotentialCover(obj, 0.5f);
-			coverTransforms.Add(obj);
-
-		}
-		//for (int i = 0; i < Hits; i++)
-		//{
-		//	if (NavMesh.SamplePosition(Colliders[i].transform.position - (Target.position - Colliders[i].transform.position).normalized, out NavMeshHit hit, 2f, AiAgent.agent.areaMask))
-		//	{
-		//		if (NavMesh.FindClosestEdge(hit.position, out hit, AiAgent.agent.areaMask))
-		//		{
-		//			// cover first Cover than create all potential Cover aroyn the CoverTransform
-		//			Node nodeCov = AiAgent.LocomotionSystem.ActiveFloor.grid.GetSafeNode(hit.position);
-		//			//Instantiate(AiAgent.LocomotionSystem.ActiveFloor.prefab, nodeCov.LocalCoord, Quaternion.identity);
-		//			CoverTransform obj = new CoverTransform(nodeCov.grid, Colliders[i].transform);
-		//			obj.CreatePotentialCover(obj, 0.5f);
-		//			coverTransforms.Add(obj);
-		//		}
-		//	}
-		//}
-
+		return GetPerfectCoverSpotForShooting();
 	}
 
 
+	public CoverNode CalculateThePerfectDefense()
+	{
+		AvailableCover.Clear();
+		FlunkedCoverSpot.Clear();
+		GetAllCoverInRange();
+
+		return GetPerfectCoverSpotForDefense();
+	}
 
 	public void GetAllCoverInRange()
 	{
 		int Hits = Physics.OverlapSphereNonAlloc(AiAgent.agent.transform.position, 10, Colliders, CoversLayers); // 10 is radius of vision
+		coverTransforms.Clear();
 		for (int i = 0; i < Hits; i++)
 		{
 			CoverTransform obj = new CoverTransform(AiAgent.LocomotionSystem.ActiveFloor.grid, Colliders[i].transform);
@@ -147,9 +92,10 @@ public class System_Cover : MonoBehaviour
 		}
 		foreach (CoverTransform CoverGO in coverTransforms)
 		{
-			CoverGO.CoverList.Clear();
+			CoverGO.CoverList?.Clear();
 			CreateallCoverspot(CoverGO);
-			CheckCoverTowardTarget(CoverGO, AiAgent.Target);
+			CheckCoverTowardTarget(CoverGO, AiAgent.Target, AiAgent.LocomotionSystem.NodeInRange);
+
 		}
 	}
 
@@ -159,7 +105,7 @@ public class System_Cover : MonoBehaviour
 
 	private float RoundFloat(float value, int nb)
 	{
-		return Mathf.Round(value * 100 * nb) * (1 / Mathf.Pow(10, nb));
+		return Mathf.Round(value * Mathf.Pow(10, nb)) * (1 / Mathf.Pow(10, nb));
 	}
 
 
@@ -172,20 +118,49 @@ public class System_Cover : MonoBehaviour
 		topLeft,
 		bottomLeft
 	}
-	public CoverNode GetPerfectNode()
+
+	public CoverNode GetPerfectCoverSpotForDefense()
 	{
-		float maxcoverVal = Mathf.Max(AvailableCover.Select(el => el.Value).ToArray());
+		if (AvailableCover == null || AvailableCover.Count == 0) return null;
+
+		// update AvailableCover
+
+		float maxValue = Mathf.Max(AvailableCover.Select(el => el.Value).ToArray());
 		foreach (CoverNode cover in AvailableCover)
 		{
-			if (cover.Value == maxcoverVal)
-			{
-				Debug.Log($"start :   perfect node {cover.node} val = {maxcoverVal} count {AvailableCover.Count}");
+
+			if (cover.Value == maxValue)
 				return cover;
-			}
+			//GameObject obj = Instantiate(aimPrefab, new Vector3(cover.node.LocalCoord.x, 1.5f, cover.node.LocalCoord.z), Quaternion.Euler(aimPrefab.transform.rotation.eulerAngles), parentCanvas);
+			//obj.transform.GetChild(1).GetComponent<Text>().text = $"{aimpercent * 100}";
+		}
+
+		return null;
+	}
+	public CoverNode GetPerfectCoverSpotForShooting()
+	{
+		if (AvailableCover == null) return null;
+
+		// update AvailableCover
+		foreach (CoverNode cover in AvailableCover)
+		{
+			float aimpercent = CalculateAimPercent(AiAgent, AiAgent.Target, cover);
+			cover.AimPercent = aimpercent;
+
+			//GameObject obj = Instantiate(aimPrefab, new Vector3(cover.node.LocalCoord.x, 1.5f, cover.node.LocalCoord.z), Quaternion.Euler(aimPrefab.transform.rotation.eulerAngles), parentCanvas);
+			//obj.transform.GetChild(1).GetComponent<Text>().text = $"{aimpercent * 100}";
+		}
+
+		// order the list by aimpercent
+		var ordred = AvailableCover.OrderByDescending(x => x.AimPercent).ToList();
+		// return greatest aim
+		if (ordred.Count > 0)
+		{
+			return ordred[0];
 		}
 		return null;
 	}
-	public void CheckCoverTowardTarget(CoverTransform CoverGameObject, Transform Target)
+	public void CheckCoverTowardTarget(CoverTransform CoverGameObject, Transform Target, HashSet<RangeNode> nodeInRange)
 	{
 		Vector3 targetDir = CoverGameObject.Transform.position - Target.position;
 
@@ -303,12 +278,18 @@ public class System_Cover : MonoBehaviour
 
 		foreach (var cover in CoverGameObject.CoverList)
 		{
+			// if cover spot is not in range ignore it
+			if (nodeInRange.Select(el => el.node).Contains(cover.node) == false) continue;
+
+
+
 			Vector3 coverPos = new Vector3(cover.node.LocalCoord.x, origin.y, cover.node.LocalCoord.z);
 			Vector3 coverDir = coverPos - origin;
 
 			if (Vector3.Dot(DotProductDirrection, coverDir) > 0)
 			{
 				Gizmos.color = Color.red;
+				AddFlunckedSpot(cover);
 				cover.Available = false;
 			}
 			else
@@ -389,13 +370,13 @@ public class System_Cover : MonoBehaviour
 			tmp -= 0.7f;
 		}
 	}
-	private async Task OnDrawGizmos()
+	private void OnDrawGizmos()
 	{
 
 		if (coverTransforms != null)
 		{
 			AvailableCover.Clear();
-
+			FlunkedCoverSpot.Clear();
 			foreach (var CoverTransform in coverTransforms)
 			{
 
@@ -629,7 +610,6 @@ public class System_Cover : MonoBehaviour
 						origin = CoverTransform.Transform.position;
 						DotProductDirrection = perp;
 					}
-
 					foreach (var cover in CoverTransform.CoverList)
 					{
 						Vector3 coverPos = new Vector3(cover.node.LocalCoord.x, origin.y, cover.node.LocalCoord.z);
@@ -654,7 +634,6 @@ public class System_Cover : MonoBehaviour
 					}
 
 				}
-
 
 
 
@@ -685,12 +664,94 @@ public class System_Cover : MonoBehaviour
 
 				}
 			}
+			if (showAimPercent && alreadCreated == false)
+			{
+				alreadCreated = true;
+				foreach (CoverNode cover in AvailableCover)
+				{
+					showAimPercent = false;
+					alreadCreated = true;
+
+
+					float aimpercent = CalculateAimPercent(AiAgent, AiAgent.Target, cover);
+
+
+					GameObject obj = Instantiate(aimPrefab, new Vector3(cover.node.LocalCoord.x, 1.5f, cover.node.LocalCoord.z), Quaternion.Euler(aimPrefab.transform.rotation.eulerAngles), parentCanvas);
+					obj.transform.GetChild(1).GetComponent<Text>().text = $"{aimpercent * 100}";
+				}
+			}
 		}
 	}
 
-	private CoverNode GetCover()
+	public CoverNode GetUnitCover(Transform unit)
 	{
-		throw new NotImplementedException();
+		if (AvailableCover == null || AvailableCover.Count == 0)
+		{
+			GetAllCoverInRange();
+		}
+		AgentManager TargetManager = unit.transform.GetComponent<AgentManager>();
+		Node TargetNode = TargetManager.LocomotionSystem.curentPositon ?? AiAgent.LocomotionSystem.ActiveFloor.grid.GetNode(TargetManager.transform);
+
+		CoverNode TargetCover = AvailableCover.FirstOrDefault(el => el.node == TargetNode);
+
+		return TargetCover;
 	}
+
+
+
+	public float CalculateAimPercent(AgentManager unit, Transform target, CoverNode cover)
+	{
+		float globalPenaltiToAim;
+		float aimPercent = 1;
+		float TargetCoverTypePenalty;
+
+
+
+
+		float TargetWeaponPenalty = cover.getweaponPenaltyPenalty(target, unit.weapon);
+
+		// suppose the trget have 4 defense and max defense is 10
+		float TargetDefencePenalty = (float)4 / (float)10;
+		//TargetDefencePercent /= 2;
+		//globalPenaltiToAim += TargetDefencePercent;
+
+
+
+
+		// get the cover of the target
+		CoverNode TargetCover = GetUnitCover(target);
+		if (TargetCover == null)
+		{
+			TargetCoverTypePenalty = 0;
+		}
+		else
+		{
+			TargetCoverTypePenalty = TargetCover.getCoverTypePenalty(unit.transform);
+		}
+
+
+
+
+
+
+
+		float Cover_Target_Distance = Vector3.Distance(cover.node.LocalCoord, target.transform.position); ;
+
+		// distance from spot to target, 
+		float distancepercent = 1 - (Cover_Target_Distance / unit.weapon.MaxRange);
+		// we add small amount to the aimpercent just to have different values aim in the cover with the same value
+		distancepercent = Mathf.Clamp01(distancepercent) / 10;
+
+		aimPercent += distancepercent;
+
+
+
+		globalPenaltiToAim = TargetCoverTypePenalty + TargetWeaponPenalty + TargetDefencePenalty;
+		aimPercent -= (globalPenaltiToAim / 3);
+
+
+		return aimPercent;
+	}
+
 }
 
