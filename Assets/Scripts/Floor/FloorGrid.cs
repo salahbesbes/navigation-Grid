@@ -13,41 +13,104 @@ namespace GridNameSpace
 		Destructable,
 		Thick,
 	}
-	public class CoverNode
-	{
-		public CoverTransform CoverTransform;
-		public Node node;
-		public float Value { get; set; }
-		public bool InMovementRange = true;
-		private bool _available = false;
-		public bool Available
-		{
-			get => _available;
-			set => _available = value;
-		}
-		public float AimPercent { get; set; }
 
-		public void SetValue(Transform unit, Transform target)
+
+
+
+	public class CoverDetails
+	{
+		public Transform Target;
+		public Transform Unit;
+		public float AimPercent { get; set; }
+		public bool InMovementRange = true;
+		public float Value { get; set; }
+
+		public CoverNode CoverSpot { get; set; }
+		public CoverDetails(CoverNode CoverSpot, Transform Unit, Transform Target)
+		{
+			this.Unit = Unit;
+			this.Target = Target;
+			this.CoverSpot = CoverSpot;
+			if (this.CoverSpot == null) Debug.Log($"unit {Unit}  target {Target}");
+			SetValue();
+			AimPercent = CalculateAimPercent();
+		}
+
+		private float CalculateAimPercent()
+		{
+
+			float globalPenaltiToAim;
+			float aimPercent = 1;
+			float TargetCoverTypePenalty;
+
+			AgentManager Agent = Unit.GetComponent<AgentManager>();
+			if (Agent == null) return 0;
+
+			float TargetWeaponPenalty = Agent.coverSystem.getweaponPenaltyPenalty(Agent, Target);
+
+			// suppose the trget have 4 defense and max defense is 10
+			float TargetDefencePenalty = (float)4 / (float)10;
+			//TargetDefencePercent /= 2;
+			//globalPenaltiToAim += TargetDefencePercent;
+
+
+
+
+			// get the cover of the target
+			CoverNode TargetCover = Agent.coverSystem.GetTargetCover(Target);
+			if (TargetCover == null)
+			{
+				TargetCoverTypePenalty = 0;
+			}
+			else
+			{
+				TargetCoverTypePenalty = TargetCover.getCoverTypePenalty(Unit);
+			}
+
+
+
+
+
+
+
+			float Cover_Target_Distance = Vector3.Distance(CoverSpot.node.LocalCoord, Target.position); ;
+
+			// distance from spot to target, 
+			float distancepercent = 1 - (Cover_Target_Distance / Agent.weapon.MaxRange);
+			// we add small amount to the aimpercent just to have different values aim in the cover with the same value
+			distancepercent = Mathf.Clamp01(distancepercent) / 10;
+
+			aimPercent += distancepercent;
+
+
+
+			globalPenaltiToAim = TargetCoverTypePenalty + TargetWeaponPenalty + TargetDefencePenalty;
+			aimPercent -= (globalPenaltiToAim / 3);
+
+			return aimPercent;
+		}
+
+		private void SetValue()
 		{
 
 			Value = 0;
 
 			// set height value
-			float maxheight = unit.transform.localScale.y * 2;
-			float heightpercent = CoverTransform.Transform.localScale.y / maxheight;
+			float maxheight = Unit.transform.localScale.y * 2;
+			float heightpercent = CoverSpot.CoverTransform.Transform.localScale.y / maxheight;
 			heightpercent = Mathf.Clamp01(heightpercent);
 			Value += heightpercent;
 
 			// set CoverType 
-			if (CoverTransform.type == CoverType.Small)
+			if (CoverSpot.CoverTransform.type == CoverType.Small)
 			{
 				Value += 0.25f;
 			}
-			else if (CoverTransform.type == CoverType.Thick)
+			else if (CoverSpot.CoverTransform.type == CoverType.Thick)
 			{
-				Value += 0.5f;
+				Value += 0.4f;
 			}
-			else if (CoverTransform.type == CoverType.Thin)
+			else if (CoverSpot.CoverTransform.type == CoverType.Thin)
 			{
 				Value += 0.2f;
 			}
@@ -55,7 +118,7 @@ namespace GridNameSpace
 			// set Cover Distance (suppose max range weapon is 10)
 			float maxWeaponDistance = 10f;
 
-			float DistanceToPlayer = Mathf.Clamp(Vector3.Distance(node.LocalCoord, target.position), 0, 10);
+			float DistanceToPlayer = Mathf.Clamp(Vector3.Distance(CoverSpot.node.LocalCoord, Target.position), 0, 10);
 			float distancePercent = 1 - (DistanceToPlayer) / maxWeaponDistance;
 			Value += distancePercent;
 
@@ -65,6 +128,146 @@ namespace GridNameSpace
 
 		}
 
+
+		public override string ToString()
+		{
+			return $" detail about the Cover spot {CoverSpot.node} and the Target {Target.name}";
+		}
+
+
+		public static float CalculateAimPercentStatic(Transform Unit, Transform Target, CoverNode ShootingSpot)
+		{
+
+			float globalPenaltiToAim;
+			float aimPercent = 1;
+			float TargetCoverTypePenalty;
+
+			AgentManager Agent = Unit.GetComponent<AgentManager>();
+			if (Agent == null) return 0;
+
+			float TargetWeaponPenalty = Agent.coverSystem.getweaponPenaltyPenalty(Agent, Target, ShootingSpot);
+
+			// suppose the trget have 4 defense and max defense is 10
+			float TargetDefencePenalty = (float)4 / (float)10;
+			//TargetDefencePercent /= 2;
+			//globalPenaltiToAim += TargetDefencePercent;
+
+
+
+
+			// get the cover of the target
+			CoverNode TargetCover = Agent.coverSystem.GetTargetCover(Target);
+
+			if (TargetCover == null)
+			{
+				TargetCoverTypePenalty = 0;
+			}
+			else
+			{
+				TargetCoverTypePenalty = TargetCover.getCoverTypePenalty(Unit);
+			}
+
+
+
+
+
+
+
+			float Cover_Target_Distance = Vector3.Distance(ShootingSpot.node.LocalCoord, Target.position); ;
+
+			// distance from spot to target, 
+			// we add small amount to the aimpercent just to have different values aim in the cover with the same value
+			float DistanceScore = Agent.weapon.Evaluate(Cover_Target_Distance);
+			//float distancepercent = Mathf.Clamp01(DistancePenalty) / 10;
+
+			//aimPercent += distancepercent;
+
+
+
+			globalPenaltiToAim = TargetCoverTypePenalty + TargetWeaponPenalty + TargetDefencePenalty + (1 - DistanceScore);
+			aimPercent -= (globalPenaltiToAim / 4);
+
+			return aimPercent;
+		}
+
+		public static float CalculateAimPercentStatic(Transform Unit, Transform Target)
+		{
+
+			float globalPenaltiToAim;
+			float aimPercent = 1;
+			float TargetCoverTypePenalty;
+
+			AgentManager Agent = Unit.GetComponent<AgentManager>();
+			if (Agent == null) return 0;
+
+			float TargetWeaponPenalty = Agent.coverSystem.getweaponPenaltyPenalty(Agent, Target);
+
+			// suppose the trget have 4 defense and max defense is 10
+			float TargetDefencePenalty = (float)4 / (float)10;
+			//TargetDefencePercent /= 2;
+			//globalPenaltiToAim += TargetDefencePercent;
+
+
+
+
+			// get the cover of the target
+			CoverNode TargetCover = Agent.coverSystem.GetTargetCover(Target);
+
+			if (TargetCover == null)
+			{
+				TargetCoverTypePenalty = 0;
+			}
+			else
+			{
+				TargetCoverTypePenalty = TargetCover.getCoverTypePenalty(Unit);
+			}
+
+
+
+
+
+
+
+			float Cover_Target_Distance = Vector3.Distance(Unit.transform.position, Target.position); ;
+
+			// distance from spot to target, 
+			float distancepercent = 1 - (Cover_Target_Distance / Agent.weapon.MaxRange);
+			// we add small amount to the aimpercent just to have different values aim in the cover with the same value
+			distancepercent = Mathf.Clamp01(distancepercent) / 10;
+
+			aimPercent += distancepercent;
+
+
+
+			globalPenaltiToAim = TargetCoverTypePenalty + TargetWeaponPenalty + TargetDefencePenalty;
+			aimPercent -= (globalPenaltiToAim / 3);
+
+			return aimPercent;
+		}
+
+	}
+	public class CoverNode
+	{
+		public CoverTransform CoverTransform;
+		public Node node;
+
+
+		private bool _available = false;
+		public bool Available
+		{
+			get => _available;
+			set => _available = value;
+		}
+
+
+
+
+
+
+
+
+
+
 		public CoverNode(Node node, CoverTransform CoverTransform)
 		{
 			this.node = node;
@@ -73,36 +276,7 @@ namespace GridNameSpace
 		}
 
 
-		public float getweaponPenaltyPenalty(Transform target, Gun weapon)
-		{
 
-			float TargetWeaponPenalty = 0;
-			// suppose the perfect range of the weapon is 3m => 
-			/*
-			 *  if distance to target <= 3 => no penalty of the aim
-			 *  else if distance to target > 3 => we apply penalty 
-			 *  suppose penalty is fixed to 0.3
-			 */
-			float perfectShotDistance = 5;
-
-
-			float Cover_Target_Distance = Vector3.Distance(node.LocalCoord, target.transform.position); ;
-
-			if (weapon.type == WeaponType.shortRange)
-			{
-
-				if (Cover_Target_Distance <= perfectShotDistance)
-				{
-					TargetWeaponPenalty = 0;
-				}
-				else
-				{
-					TargetWeaponPenalty = 0.3f;
-				}
-
-			}
-			return TargetWeaponPenalty;
-		}
 
 		public float getCoverTypePenalty(Transform unit)
 		{

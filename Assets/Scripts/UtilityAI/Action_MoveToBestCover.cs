@@ -12,15 +12,20 @@ namespace TL.UtilityAI.Actions
 		{
 			if (npc.agent.name == "player") return;
 			Debug.Log("I'm Moving to best cover Spot");
-			// Logic for updating everything involved with eating
 
-			CoverNode Cover = npc.coverSystem.CalculateThePerfectDefense();
+			npc.coverSystem.AvailableCover.Clear();
+			npc.coverSystem.CreateAllPossibleCoverInRangeOfVision(10);
+			npc.coverSystem.GetAllCoverInRangeOfMovementForAllTargets(npc.Targests);
 
-			if (Cover != null)
+			CoverDetails bestCover = npc.coverSystem.GetThePrefectSpotForShooting();
+
+
+
+			if (bestCover.CoverSpot != null)
 			{
 				//Debug.Log($"perfect node {perfectCover?.node}");
-				Instantiate(npc.LocomotionSystem.ActiveFloor.prefab, Cover.node.LocalCoord + Vector3.up, Quaternion.identity).GetComponent<Renderer>().material.color = Color.yellow;
-				npc.LocomotionSystem.StartMoving(Cover.node);
+				Instantiate(npc.LocomotionSystem.ActiveFloor.prefab, bestCover.CoverSpot.node.LocalCoord + Vector3.up, Quaternion.identity).GetComponent<Renderer>().material.color = Color.yellow;
+				npc.LocomotionSystem.StartMoving(bestCover.CoverSpot.node);
 
 			}
 			else

@@ -16,12 +16,13 @@ public class NPCMovementEditor : Editor
 		{
 			return;
 		}
+		Transform bestTarget = movement.AiAgent.Targests[0];
 
 		int Hits = Physics.OverlapSphereNonAlloc(movement.AiAgent.transform.position, 10, Colliders, movement.AiAgent.coverSystem.CoversLayers);
 
 		for (int i = 0; i < Hits; i++)
 		{
-			if (NavMesh.SamplePosition(Colliders[i].transform.position - (movement.AiAgent.Target.position - Colliders[i].transform.position).normalized, out NavMeshHit hit, 2f, movement.AiAgent.agent.areaMask))
+			if (NavMesh.SamplePosition(Colliders[i].transform.position - (bestTarget.position - Colliders[i].transform.position).normalized, out NavMeshHit hit, 2f, movement.AiAgent.agent.areaMask))
 			{
 
 
@@ -58,6 +59,7 @@ public class NPCMovementEditor : Editor
 		return;
 		System_Movement_NPC movement = (System_Movement_NPC)target;
 
+		Transform bestTarget = movement.AiAgent.Targests[0];
 
 		for (int i = 0; i < Colliders.Length; i++)
 		{
@@ -91,7 +93,7 @@ public class NPCMovementEditor : Editor
 			Debug.Log($"stepcount {i}");
 			float angle = movement.transform.eulerAngles.y - (360 / 2) + stepAngleSize * i;
 			Debug.Log($"stepAngleSize {stepAngleSize}");
-			ViewCastInfo newViewCast = ViewCast(angle, movement.AiAgent.Target, movement.AiAgent.coverSystem.CoversLayers);
+			ViewCastInfo newViewCast = ViewCast(angle, bestTarget, movement.AiAgent.coverSystem.CoversLayers);
 
 			viewPoints.Add(newViewCast);
 		}
@@ -102,7 +104,7 @@ public class NPCMovementEditor : Editor
 		foreach (ViewCastInfo viewPoint in viewPoints)
 		{
 
-			Handles.DrawLine(movement.AiAgent.Target.transform.position, viewPoint.point);
+			Handles.DrawLine(bestTarget.transform.position, viewPoint.point);
 
 			if (viewPoint.hit == true)
 			{
@@ -119,7 +121,7 @@ public class NPCMovementEditor : Editor
 					}
 				}
 
-				if (NavMesh.SamplePosition(viewPoint.point - (movement.AiAgent.Target.position - hit.position).normalized, out NavMeshHit hit2, 2f, movement.AiAgent.agent.areaMask))
+				if (NavMesh.SamplePosition(viewPoint.point - (bestTarget.position - hit.position).normalized, out NavMeshHit hit2, 2f, movement.AiAgent.agent.areaMask))
 				{
 
 					if (NavMesh.FindClosestEdge(hit.position, out hit, movement.AiAgent.agent.areaMask))

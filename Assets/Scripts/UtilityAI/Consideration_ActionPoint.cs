@@ -15,7 +15,7 @@ namespace TL.UtilityAI.Considerations
 
 			score = RoundFloat(Responsecurve.Evaluate(percent), 2);
 
-			Debug.Log($" AP {score}");
+			//Debug.Log($" AP {score}");
 			return score;
 		}
 	}

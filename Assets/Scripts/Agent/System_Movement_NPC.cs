@@ -25,7 +25,7 @@ public class System_Movement_NPC : System_Movement, IBehaviour
 	{
 		updateProperties();
 		AgentInputSystem();
-		NodeInRange = GetRangeOfMevement(curentPositon, 8);
+		//NodeInRange = GetRangeOfMevement(curentPositon, 8);
 
 	}
 	public override void start()
@@ -50,6 +50,7 @@ public class System_Movement_NPC : System_Movement, IBehaviour
 			}
 		}
 
+		NodeInRange = GetRangeOfMevement(curentPositon, 8);
 
 		//StartPatrol();
 
@@ -164,6 +165,9 @@ public class System_Movement_NPC : System_Movement, IBehaviour
 	public HashSet<RangeNode> GetRangeOfMevement(Node currenPosition, int MaxRange, int minRange = 0, int currentLineOfRange = 0,
 		HashSet<RangeNode> nodesInRange = null, List<Node> nextLineRange = null, List<Node> alreadyChecked = null)
 	{
+
+
+		if (currenPosition == null) currenPosition = ActiveFloor.grid.GetNode(AiAgent.transform);
 		if (alreadyChecked == null) alreadyChecked = new List<Node>();
 		if (nextLineRange == null)
 			nextLineRange = new List<Node>() { currenPosition };
@@ -171,7 +175,6 @@ public class System_Movement_NPC : System_Movement, IBehaviour
 			nodesInRange = new HashSet<RangeNode>() { new RangeNode(currenPosition, true) };
 		if (currentLineOfRange > MaxRange) return nodesInRange;
 
-		if (currenPosition == null) currenPosition = ActiveFloor.grid.GetNode(AiAgent.transform);
 		List<Node> newLineRange = new List<Node>();
 
 		foreach (Node node in nextLineRange)
@@ -215,10 +218,7 @@ public class System_Movement_NPC : System_Movement, IBehaviour
 			StartPatrol();
 		}
 
-		if (Input.GetKeyDown(KeyCode.S) && AiAgent.weapon != null && AiAgent.agent.name != "player")
-		{
-			StartCoroutine(AiAgent.weapon.StartShoting());
-		}
+
 
 	}
 

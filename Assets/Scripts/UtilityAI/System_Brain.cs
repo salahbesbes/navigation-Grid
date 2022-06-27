@@ -1,3 +1,5 @@
+using GridNameSpace;
+using System.Collections.Generic;
 using TL.UtilityAI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -80,7 +82,61 @@ namespace UtilityAI
 
 
 
+
+		public AgentManager SelectBestTarget(List<Transform> TargetInVision)
+		{
+
+			List<TargetInformation> targetsInformation = new List<TargetInformation>();
+			foreach (Transform target in TargetInVision)
+			{
+				if (target.TryGetComponent(out AgentManager TargetAgentManaget))
+				{
+					//targetsInformation.Add(new TargetInformation(TargetAgentManaget, npc));
+				}
+			}
+
+
+			return null;
+
+		}
+
 	}
+
+	public class TargetInformation
+	{
+		public AgentManager Unit;
+		public AgentManager TargetManager;
+		public Node nodePosition;
+		public float DistanceToUnit;
+		public float AimPercent;
+		public CoverNode Cover
+		{
+			get;
+			set;
+		}
+		public bool InRangeOfWeapon
+		{
+			get
+			{
+				return IsInRangeOf(Unit);
+			}
+			private set { }
+		}
+
+		private bool IsInRangeOf(AgentManager unit)
+		{
+			Gun UnitWeapon = unit.weapon;
+			float weaponRange = UnitWeapon?.MaxRange ?? 0f;
+
+			return Vector3.Distance(unit.transform.position, TargetManager.transform.position) <= weaponRange;
+
+		}
+
+
+
+	}
+
+
 }
 
 

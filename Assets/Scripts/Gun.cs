@@ -10,6 +10,7 @@ public class Gun : MonoBehaviour
 {
 	[SerializeField]
 	public float MaxRange = 10f;
+	[SerializeField] protected AnimationCurve Responsecurve;
 
 	public WeaponType type = WeaponType.none;
 	[SerializeField]
@@ -44,7 +45,7 @@ public class Gun : MonoBehaviour
 		AiAgent.weapon = this;
 	}
 
-	public void Shoot()
+	public void Shoot(Transform Target)
 	{
 		if (LastShootTime + ShootDelay < Time.time)
 		{
@@ -52,12 +53,11 @@ public class Gun : MonoBehaviour
 			// For more details you can see: https://youtu.be/fsDE_mO4RZM or if using Unity 2021+: https://youtu.be/zyzqA_CPz2E
 
 			ShootingSystem.Play();
-			Vector3 direction = GetDirection();
+			Vector3 direction = GetDirection(Target);
 
 
 			if (Physics.Raycast(BulletSpawnPoint.position, direction, out RaycastHit hit, float.MaxValue, Mask))
 			{
-				Debug.Log($"{hit}");
 				TrailRenderer trail = Instantiate(BulletTrail, BulletSpawnPoint.position, Quaternion.identity);
 
 				StartCoroutine(SpawnTrail(trail, hit.point, hit.normal, true));
@@ -69,12 +69,12 @@ public class Gun : MonoBehaviour
 		}
 	}
 
-	private Vector3 GetDirection()
+	private Vector3 GetDirection(Transform Target)
 	{
 		Vector3 target = BulletSpawnPoint.position;
 		//target = new Vector3(target.x, target.y * 1.5f, target.z);
 
-		Vector3 direction = AiAgent.Target.position - target;
+		Vector3 direction = Target.position - target;
 
 
 		if (AddBulletSpread)
@@ -116,24 +116,29 @@ public class Gun : MonoBehaviour
 		Destroy(Trail.gameObject, Trail.time);
 	}
 
-	public IEnumerator StartShoting()
+	public IEnumerator StartShoting(Transform Target)
 	{
 		float elapcedTime = 0;
 
 		while (elapcedTime < 3)
 		{
 			elapcedTime += Time.deltaTime;
-			Shoot();
+			Shoot(Target);
 			yield return null;
 		}
 	}
 
 	private void OnDrawGizmos()
 	{
-		if (AiAgent?.Target == null || BulletSpawnPoint == null) return;
+		//if (AiAgent?.Target == null || BulletSpawnPoint == null) return;
 
-		Vector3 direction = GetDirection();
+		//Vector3 direction = GetDirection();
 
-		Gizmos.DrawRay(BulletSpawnPoint.position, direction);
+		//Gizmos.DrawRay(BulletSpawnPoint.position, direction);
+	}
+
+	public float Evaluate(float cover_Target_Distance)
+	{
+		return Responsecurve.Evaluate(cover_Target_Distance);
 	}
 }

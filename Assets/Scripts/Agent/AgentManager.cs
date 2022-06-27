@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 using UtilityAI;
@@ -9,10 +10,13 @@ public class AgentManager : MonoBehaviour
 	public System_Cover coverSystem;
 	public LineOfSight_System lineOfSight;
 	public NavMeshAgent agent;
-	public Transform Target;
+	//public Transform Target;
 	public System_Brain brain;
 	public Gun weapon;
 	public Stats stats;
+
+	[SerializeField]
+	public List<Transform> Targests = new List<Transform>();
 
 
 
@@ -34,8 +38,12 @@ public class AgentManager : MonoBehaviour
 	}
 	private void Start()
 	{
+
+		if (brain == null) return;
+
 		LocomotionSystem.start();
-		coverSystem.start(Target);
+
+		coverSystem.start();
 	}
 
 
@@ -47,4 +55,8 @@ public class AgentManager : MonoBehaviour
 
 	}
 
+	public void StartShootCoroutine(AgentManager Target)
+	{
+		StartCoroutine(weapon.StartShoting(Target.transform));
+	}
 }

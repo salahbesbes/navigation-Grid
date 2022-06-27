@@ -12,6 +12,7 @@ namespace TL.UtilityAI.Actions
 			Debug.Log("I Have Shot The enemy");
 			// Logic for updating everything involved with eating
 
+			npc.StartShootCoroutine(npc.coverSystem.BestTarget);
 			npc.OnFinishedAction();
 		}
 	}
