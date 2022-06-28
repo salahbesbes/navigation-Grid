@@ -50,7 +50,7 @@ public class System_Movement_NPC : System_Movement, IBehaviour
 			}
 		}
 
-		NodeInRange = GetRangeOfMevement(curentPositon, 8);
+		NodeInRange = GetRangeOfMevement(CurentPositon, 8);
 
 		//StartPatrol();
 
@@ -109,7 +109,7 @@ public class System_Movement_NPC : System_Movement, IBehaviour
 				// we dont move to the next Patrol Point until we reach the Final Destination
 				yield return new WaitUntil(() =>
 				{
-					return curentPositon == FinalDestination;
+					return CurentPositon == FinalDestination;
 				});
 				// we can make him look around him for a while then fo to the next point ( code here )
 
@@ -130,7 +130,7 @@ public class System_Movement_NPC : System_Movement, IBehaviour
 
 
 		if (AiAgent == null) return;
-		NodeInRange = GetRangeOfMevement(curentPositon, 8);
+		NodeInRange = GetRangeOfMevement(CurentPositon, 8);
 
 
 

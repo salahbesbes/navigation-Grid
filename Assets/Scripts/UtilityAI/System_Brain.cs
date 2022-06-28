@@ -14,26 +14,23 @@ namespace UtilityAI
 		public Action[] actionsAvailable;
 		// Start is called before the first frame update
 
-
 		public void awake(AgentManager Npc)
 		{
 			npc = Npc;
 		}
-		void Start()
+
+		private void Start()
 		{
 			npc = GetComponent<AgentManager>();
 			desideButton.onClick.AddListener(() => DecideBestAction());
-
 		}
 
 		// Update is called once per frame
-		void Update()
+		private void Update()
 		{
-
 		}
 
-		// Loop through all the available actions 
-		// Give me the highest scoring action
+		// Loop through all the available actions Give me the highest scoring action
 		public void DecideBestAction()
 		{
 			float score = 0f;
@@ -47,13 +44,12 @@ namespace UtilityAI
 				}
 				Debug.Log($" {actionsAvailable[i]} => score {actionsAvailable[i].score}");
 			}
-			Debug.Log($"   best action {actionsAvailable[nextBestActionIndex]} with score {actionsAvailable[nextBestActionIndex].score}");
+			//Debug.Log($"   best action {actionsAvailable[nextBestActionIndex]} with score {actionsAvailable[nextBestActionIndex].score}");
 			bestAction = actionsAvailable[nextBestActionIndex];
 			bestAction.Execute(npc);
 		}
 
-		// Loop through all the considerations of the action
-		// Score all the considerations
+		// Loop through all the considerations of the action Score all the considerations
 		// Average the consideration scores ==> overall action score
 		public float ScoreAction(Action action)
 		{
@@ -71,21 +67,21 @@ namespace UtilityAI
 			}
 
 			// Averaging scheme of overall score
-			float originalScore = score;
-			float modFactor = 1 - (1 / action.considerations.Length);
-			float makeupValue = (1 - originalScore) * modFactor;
-			action.score = originalScore + (makeupValue * originalScore);
+			action.score = average(score, action.considerations.Length);
 
 			return action.score;
 		}
 
-
-
-
+		private float average(float score, int NBconditions)
+		{
+			float originalScore = score;
+			float modFactor = 1 - (1 / NBconditions);
+			float makeupValue = (1 - originalScore) * modFactor;
+			return originalScore + (makeupValue * originalScore);
+		}
 
 		public AgentManager SelectBestTarget(List<Transform> TargetInVision)
 		{
-
 			List<TargetInformation> targetsInformation = new List<TargetInformation>();
 			foreach (Transform target in TargetInVision)
 			{
@@ -95,11 +91,8 @@ namespace UtilityAI
 				}
 			}
 
-
 			return null;
-
 		}
-
 	}
 
 	public class TargetInformation
@@ -109,11 +102,13 @@ namespace UtilityAI
 		public Node nodePosition;
 		public float DistanceToUnit;
 		public float AimPercent;
+
 		public CoverNode Cover
 		{
 			get;
 			set;
 		}
+
 		public bool InRangeOfWeapon
 		{
 			get
@@ -129,17 +124,6 @@ namespace UtilityAI
 			float weaponRange = UnitWeapon?.MaxRange ?? 0f;
 
 			return Vector3.Distance(unit.transform.position, TargetManager.transform.position) <= weaponRange;
-
 		}
-
-
-
 	}
-
-
 }
-
-
-
-
-

@@ -267,6 +267,7 @@ GameObject:
   - component: {fileID: 8158024449812855293}
   - component: {fileID: 8158024449812855292}
   - component: {fileID: 8158024449812855291}
+  - component: {fileID: 42456996536893332}
   m_Layer: 9
   m_Name: player
   m_TagString: Untagged
@@ -524,7 +525,7 @@ MonoBehaviour:
   agent: {fileID: 8158024449812855269}
   brain: {fileID: 0}
   weapon: {fileID: 0}
-  stats: {fileID: 0}
+  stats: {fileID: 42456996536893332}
   Targests: []
 --- !u!114 &8158024449812855291
 MonoBehaviour:
@@ -545,6 +546,18 @@ MonoBehaviour:
   FloorLayer:
     serializedVersion: 2
     m_Bits: 128
+--- !u!114 &42456996536893332
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8158024449812855266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f35652822ac39a479e1c5093aa288af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8158024450596790722
 GameObject:
   m_ObjectHideFlags: 0

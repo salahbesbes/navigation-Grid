@@ -24,7 +24,7 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 
 	public void updateProperties()
 	{
-		curentPositon = ActiveFloor.grid.GetNode(AiAgent.transform);
+		CurentPositon = ActiveFloor.grid.GetNode(AiAgent.transform);
 
 	}
 
@@ -32,8 +32,8 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 	protected LineRenderer lr;
 	protected List<Node> path = new List<Node>();
 	public Floor ActiveFloor = null;
-	public Node FinalDestination;
-	public Node curentPositon;
+	public Node FinalDestination { get; set; }
+	public Node CurentPositon { get { return ActiveFloor.grid.GetNode(AiAgent.transform); } private set { } }
 	protected int destinationX;
 	protected int destinationY;
 	[HideInInspector]
@@ -49,14 +49,14 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 
 	public void StartMoving(Node destination)
 	{
-		curentPositon = ActiveFloor.grid.GetNode(transform);
+		CurentPositon = ActiveFloor.grid.GetNode(transform);
 
 		if (destination == null)
 		{
 			//Debug.Log($"cant move,  Destination is null");
 			return;
 		}
-		if (curentPositon == null)
+		if (CurentPositon == null)
 		{
 			Debug.Log($"cant move, CurentPos is null");
 			return;
@@ -164,7 +164,7 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 
 
 
-		curentPositon = currentNodelink.node;
+		CurentPositon = currentNodelink.node;
 		ActiveFloor = currentNodelink.node.grid.floor;
 
 		//Debug.Log($"when Finished Crossing ActiveFloor is {ActiveFloor} and destination is {FinalDestination}  current pos is {curentPositon}");
@@ -181,7 +181,7 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 		yield return new WaitUntil(() =>
 		{
 			//Debug.Log($"index {Index} distance ={Vector3.Distance(wordSpacePath[Index] + Vector3.up * AiAgent.agent.baseOffset, AiAgent.agent.transform.position)} agen radius {AiAgent.agent.radius}  comp is {Vector3.Distance(wordSpacePath[Index] + Vector3.up * AiAgent.agent.baseOffset, AiAgent.agent.transform.position) <= AiAgent.agent.radius}");
-			return path[Index] == curentPositon;
+			return path[Index] == CurentPositon;
 			//return Vector3.Distance(path[Index] + Vector3.up * AiAgent.agent.baseOffset, AiAgent.agent.transform.position) <= AiAgent.agent.radius;
 		});
 
@@ -213,7 +213,7 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 			yield return StartCoroutine(RunScenario(path, i));
 			yield return new WaitUntil(() =>
 			{
-				return curentPositon == path[i];
+				return CurentPositon == path[i];
 				//return Vector3.Distance(path[i] + Vector3.up * AiAgent.agent.baseOffset, AiAgent.agent.transform.position) <= AiAgent.agent.radius;
 			});
 

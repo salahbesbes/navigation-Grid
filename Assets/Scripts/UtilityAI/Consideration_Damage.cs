@@ -7,15 +7,7 @@ namespace TL.UtilityAI.Considerations
 	{
 		public override float ScoreConsideration(AgentManager npc)
 		{
-
-			AgentManager TargetManager = npc.coverSystem.GetBestTarget();
-
-
-			float percent = 1 - ((TargetManager.stats.Health - npc.weapon.Damage) / TargetManager.stats.Health);
-			Debug.Log($"percent {percent    }");
-			percent = Mathf.Clamp01(percent);
-			score = RoundFloat(Responsecurve.Evaluate(percent), 2);
-
+			score = 0.1f;
 			return score;
 		}
 	}

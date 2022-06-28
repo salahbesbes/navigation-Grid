@@ -1,3 +1,4 @@
+using GridNameSpace;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
@@ -55,7 +56,7 @@ public class AgentManager : MonoBehaviour
 
 	}
 
-	public void StartShootCoroutine(AgentManager Target)
+	public void StartShootCoroutine(TargetDetail Target)
 	{
 		StartCoroutine(weapon.StartShoting(Target.transform));
 	}

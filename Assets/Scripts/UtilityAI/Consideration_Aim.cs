@@ -9,42 +9,23 @@ namespace TL.UtilityAI.Considerations
 		public override float ScoreConsideration(AgentManager npc)
 		{
 
+			TargetDetail bestTarget = npc.coverSystem.GetPerfectTarget();
 
-			npc.coverSystem.AvailableCover.Clear();
-			npc.coverSystem.CreateAllPossibleCoverInRangeOfVision(10);
-			npc.coverSystem.GetAllCoverInRangeOfMovementForAllTargets(npc.Targests);
+			// if we want to move or no we set the best cover spot
+			npc.coverSystem.SetBestCoverPosition(bestTarget.TargetedBy.someNodePosition);
 
-			CoverDetails bestCover = npc.coverSystem.GetThePrefectSpotForShooting();
-
-			//npc.coverSystem.GetBestTarget();
-			CoverNode myCover = npc.coverSystem.GetMyCoverNode();
+			TargetDetail myBestTArget = npc.coverSystem.GetPerfectTargetForMyPosition();
 
 
-			if (myCover == null)
-			{
-				Debug.Log($" i have no cover return 0 ");
-				return 0;
-			}
+			//Debug.Log($"bestatrget {bestTarget.transform.name} detail val {bestTarget.Aim}");
+			//Debug.Log($" My best target {myBestTArget.transform.name} detail val {myBestTArget.Aim}");
+
+			float percent = myBestTArget.Aim / bestTarget.Aim;
+
+			score = Responsecurve.Evaluate(RoundFloat(percent, 2));
+			//Debug.Log($"percent {percent}  score {score}");
 
 
-			Transform bestTargetForBestCover = npc.coverSystem.BestTArgetFor(bestCover.CoverSpot);
-			Transform bestTargetFormyCoverSpot = npc.coverSystem.BestTArgetFor(myCover);
-			float myBestTargetAim = CoverDetails.CalculateAimPercentStatic(npc.transform, bestTargetFormyCoverSpot, myCover);
-			float BestTargetAimforbestCover = CoverDetails.CalculateAimPercentStatic(npc.transform, bestTargetForBestCover, bestCover.CoverSpot);
-
-			float percent = myBestTargetAim / BestTargetAimforbestCover;
-			Debug.Log($"my aim {myBestTargetAim}  best aim {BestTargetAimforbestCover}");
-			score = RoundFloat(Responsecurve.Evaluate(percent), 2);
-
-			if (score < 0.5f)
-			{
-				npc.coverSystem.SetBestTarget(bestTargetForBestCover);
-			}
-			else
-			{
-				npc.coverSystem.SetBestTarget(bestTargetFormyCoverSpot);
-			}
-			//Debug.Log($" bestDetailForMyCover  {bestDetailForMyCover.AimPercent}, bestDetailForBestCover {bestDetailForBestCover.AimPercent}, percent {percent} score is {score}");
 
 			return score;
 		}

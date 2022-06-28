@@ -43,7 +43,7 @@ public class System_Movement_Agent : System_Movement
 					//Debug.Log($"dest [x{destinationX}, y{destinationY}]");
 					ActiveNodeLink = ClosestNodeLinkAvailable(newFloor);
 					Node destination = ActiveNodeLink.node;
-					if (curentPositon == destination)
+					if (CurentPositon == destination)
 					{
 						CrossingToNodeLinkDestination(ActiveNodeLink, AiAgent);
 					}
