@@ -5,12 +5,13 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;
 
-interface IBehaviour
+internal interface IBehaviour
 {
 	public void start();
-	public void awake(AgentManager agent);
-	public void update();
 
+	public void awake(AgentManager agent);
+
+	public void update();
 }
 
 [RequireComponent(typeof(AgentManager))]
@@ -19,13 +20,21 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 	[HideInInspector]
 	public AgentManager AiAgent;
 	public static readonly int sSpeedHash = Animator.StringToHash("Speed");
-	public HashSet<RangeNode> NodeInRange = new HashSet<RangeNode>();
-
+	public HashSet<RangeNode> NodeInRange { get; set; } = new HashSet<RangeNode>();
 
 	public void updateProperties()
 	{
 		CurentPositon = ActiveFloor.grid.GetNode(AiAgent.transform);
+		if (CurentPositon == null)
+		{
+			if (Physics.Raycast(AiAgent.transform.position, Vector3.down, out RaycastHit hit, FloorLayer))
+			{
+				Floor newFloor = hit.transform.GetComponent<Floor>();
+				ActiveFloor = newFloor;
+				CurentPositon = ActiveFloor.grid.GetNode(AiAgent.transform);
 
+			}
+		}
 	}
 
 	protected Animator mAnimator;
@@ -33,19 +42,22 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 	protected List<Node> path = new List<Node>();
 	public Floor ActiveFloor = null;
 	public Node FinalDestination { get; set; }
-	public Node CurentPositon { get { return ActiveFloor.grid.GetNode(AiAgent.transform); } private set { } }
+
+	public Node CurentPositon
+	{ get { return ActiveFloor.grid.GetNode(AiAgent.transform); } private set { } }
+
 	protected int destinationX;
 	protected int destinationY;
+
 	[HideInInspector]
 	public NodeLink ActiveNodeLink;
 
 	public Coroutine crossing = null;
+
 	[HideInInspector]
 	public bool pressedOnDifferentFloor;
 
 	public LayerMask FloorLayer;
-
-
 
 	public void StartMoving(Node destination)
 	{
@@ -60,22 +72,72 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 		{
 			Debug.Log($"cant move, CurentPos is null");
 			return;
+
+
 		}
 		NavMeshPath navMeshPath = new NavMeshPath();
 
 		AiAgent.agent.CalculatePath(destination.LocalCoord, navMeshPath);
 
-		path = FindPath.getPathToDestination(navMeshPath.corners, ActiveFloor);
+		lr.endColor = Color.red;
+		lr.positionCount = navMeshPath.corners.Length;
+		lr.SetPositions(navMeshPath.corners);
 
+
+		path = FindPath.getPathToDestination(navMeshPath.corners, ActiveFloor, destination.grid.floor);
 		if (path.Count == 0)
 		{
 			//Debug.Log($"  path from {curentPositon} to {destination} is 0 we wont move");
 			return;
+
+
 		}
 		List<Node> optimizedPath = FindPath.createWayPointOriginal(path);
-		lr.positionCount = optimizedPath.Count;
-		lr.SetPositions(optimizedPath.Select(el => el.LocalCoord).ToArray());
+		lr.endColor = Color.white;
+
+		//lr.positionCount = optimizedPath.Count;
+		//lr.SetPositions(optimizedPath.Select(el => el.LocalCoord).ToArray());
 		StartCoroutine(Move(optimizedPath));
+		return;
+
+
+	}
+
+	protected List<Node> GetPathFromTo(Node start, Node end)
+	{
+		List<Node> path = new List<Node>();
+		if (end == null)
+		{
+			//Debug.Log($"cant move,  Destination is null");
+			return path;
+		}
+		if (start == null)
+		{
+			Debug.Log($"cant move, CurentPos is null");
+			return path;
+
+
+		}
+		NavMeshPath navMeshPath = new NavMeshPath();
+
+		//AiAgent.agent.CalculatePath(end.LocalCoord, navMeshPath);
+		NavMesh.CalculatePath(start.LocalCoord, end.LocalCoord, 1, navMeshPath);
+		lr.positionCount = 0;
+		lr.endColor = Color.red;
+		lr.positionCount = navMeshPath.corners.Length;
+		lr.SetPositions(navMeshPath.corners);
+
+
+		path = FindPath.getPathToDestination(navMeshPath.corners, start.grid.floor, end.grid.floor);
+		if (path.Count == 0)
+		{
+			Debug.Log($"  path from {start} to {end} is 0 we wont move");
+			return path;
+
+
+		}
+		List<Node> optimizedPath = FindPath.createWayPointOriginal(path);
+		return optimizedPath;
 	}
 
 	public void StartCrossing(Vector3 destination)
@@ -89,7 +151,6 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 	{
 		if (cam == null) cam = Camera.main;
 		Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-
 		RaycastHit[] hits = Physics.SphereCastAll(ray.origin, 0.25f, ray.direction);
 		foreach (RaycastHit hit in hits)
 		{
@@ -103,24 +164,20 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 		return ActiveFloor;
 	}
 
-
-
 	public void ListenToNodeLinkEvent(NodeLink node)
 	{
 		node.AddObservable(this);
 		node.Destiation.AddObservable(this);
-
 	}
+
 	public NodeLink ClosestNodeLinkAvailable(Floor newFloor)
 	{
 		float minDistance = int.MaxValue;
 		NodeLink closestNode = null;
 		float currentDistance;
 
-
 		// get all nodeLinks that have the Destination.floor is the newFloor
 		List<NodeLink> NodeLinksThatLeadToNewFloor = ActiveFloor.nodeLinks.Where(node => node.Destiation.floor == newFloor).ToList();
-
 
 		foreach (NodeLink node in NodeLinksThatLeadToNewFloor)
 		{
@@ -135,10 +192,6 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 		ActiveNodeLink = closestNode;
 		return closestNode;
 	}
-
-
-
-
 
 	public void CrossingToNodeLinkDestination(NodeLink currentNodelink, AgentManager unit)
 	{
@@ -162,8 +215,6 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 
 		AiAgent.agent.speed = 4f;
 
-
-
 		CurentPositon = currentNodelink.node;
 		ActiveFloor = currentNodelink.node.grid.floor;
 
@@ -171,8 +222,6 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 		StartMoving(FinalDestination);
 		pressedOnDifferentFloor = false;
 	}
-
-
 
 	private IEnumerator RunScenario(List<Node> path, int Index)
 	{
@@ -186,8 +235,6 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 		});
 
 		yield return new WaitForSeconds(0.1f);
-
-
 	}
 
 	private IEnumerator Cross(Vector3 dest)
@@ -200,10 +247,9 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 			return Vector3.Distance(dest + Vector3.up * AiAgent.agent.baseOffset, AiAgent.agent.transform.position) < AiAgent.agent.radius;
 		});
 		//Debug.Log($"cross ");
-
 	}
 
-	private IEnumerator Move(List<Node> path)
+	protected IEnumerator Move(List<Node> path)
 	{
 		float pauseTime = 0.1f;
 		mAnimator.SetFloat(sSpeedHash, AiAgent.agent.speed);
@@ -220,13 +266,7 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 			yield return new WaitForSeconds(pauseTime);
 		}
 		mAnimator.SetFloat(sSpeedHash, 0);
-
 	}
-
-
-
-
-
 
 	private void OnDisable()
 	{
@@ -236,6 +276,49 @@ public abstract class System_Movement : MonoBehaviour, IBehaviour
 		}
 	}
 
+	protected HashSet<RangeNode> GetRangeOfMevement(Node currenPosition, int MaxRange, int minRange = 0, int currentLineOfRange = 0,
+		HashSet<RangeNode> nodesInRange = null, List<Node> nextLineRange = null, List<Node> alreadyChecked = null)
+	{
+		if (currenPosition == null) currenPosition = ActiveFloor.grid.GetNode(AiAgent.transform);
+		if (alreadyChecked == null) alreadyChecked = new List<Node>();
+		if (nextLineRange == null)
+			nextLineRange = new List<Node>() { currenPosition };
+		if (nodesInRange == null)
+			nodesInRange = new HashSet<RangeNode>() { new RangeNode(currenPosition, true) };
+		if (currentLineOfRange > MaxRange) return nodesInRange;
+
+		List<Node> newLineRange = new List<Node>();
+
+		foreach (Node node in nextLineRange)
+		{
+			if (alreadyChecked.Contains(node)) continue;
+			alreadyChecked.Add(node);
+			List<Node> tmp = node.neighbours.Union(node.RemoteNodes).ToList();
+			foreach (Node neighbor in tmp)
+			{
+				if (alreadyChecked.Contains(neighbor)) continue;
+				newLineRange.Add(neighbor);
+
+				if (currentLineOfRange >= minRange && !neighbor.isObstacle)
+				{
+					if (currentLineOfRange > (float)(MaxRange - minRange) / 2 + minRange)
+					{
+						nodesInRange.Add(new RangeNode(neighbor, false));
+					}
+					else
+					{
+						nodesInRange.Add(new RangeNode(neighbor, true));
+					}
+				}
+				//else
+				//{
+				//	nodesInRange.Add(new RangeNode(neighbor, true));
+
+				//}
+			}
+		}
+		return GetRangeOfMevement(currenPosition, MaxRange, minRange, currentLineOfRange + 1, nodesInRange, newLineRange, alreadyChecked);
+	}
 	private void OnDestroy()
 	{
 		foreach (var nodeLink in ActiveFloor.nodeLinks)

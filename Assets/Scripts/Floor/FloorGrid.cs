@@ -32,6 +32,25 @@ namespace GridNameSpace
 		public bool isObstacle;
 		public bool isNodeLink;
 
+		public List<Node> RemoteNodes = new List<Node>();
+
+		public bool IsRemoteNode { get; private set; }
+		public bool IsEdgeNode { get; set; } = false;
+
+		public void AddNewRemoteNode(Node node)
+		{
+			if (node == null)
+			{
+				return;
+			}
+			//if (node.IsEdgeNode == false) return;
+			if (!RemoteNodes.Contains(node))
+			{
+				RemoteNodes.Add(node);
+				node.IsRemoteNode = true;
+			}
+		}
+
 		public Node(Vector3 localCoord, int x, int y, FloorGrid grid)
 		{
 			LocalCoord = localCoord;
@@ -239,7 +258,6 @@ namespace GridNameSpace
 
 			if (cam == null) cam = Camera.main;
 			Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-			Debug.DrawRay(ray.origin, ray.direction, Color.black);
 			if (Physics.Raycast(ray, out RaycastHit hit, floorLayer))
 			{
 				Vector3 worldPosition = ray.GetPoint(hit.distance);
@@ -334,8 +352,8 @@ namespace GridNameSpace
 			tmpX = (Pos.z - buttonLeft.z) / nodeSize;
 			tmpY = (Pos.x - buttonLeft.x) / nodeSize;
 
-			percentX = Mathf.RoundToInt(tmpX);
-			percentY = Mathf.RoundToInt(tmpY);
+			percentX = Mathf.RoundToInt(tmpY);
+			percentY = Mathf.RoundToInt(tmpX);
 
 			if (percentX < 0)
 			{

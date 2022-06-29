@@ -47,7 +47,9 @@ public static class FindPath
 			{
 				Debug.Log($"neighbors are 0");
 			}
-			foreach (Node neighbour in current.neighbours)
+
+			List<Node> tmp = current.neighbours.Union(current.RemoteNodes).ToList();
+			foreach (Node neighbour in tmp)
 			{
 				if (closedLsit.Contains(neighbour) || neighbour.isObstacle) continue;
 
@@ -165,12 +167,7 @@ public static class FindPath
 		{
 
 			Node lastNodeCoord = path[path.Count - 1];
-			if (wayPoints.Contains(lastNodeCoord) == false)
-			{
-				wayPoints.Add(lastNodeCoord);
-			}
-			// remove the first position where the player is sitting
-			wayPoints.RemoveAt(0);
+			wayPoints.Add(lastNodeCoord);
 		}
 
 		return wayPoints;
@@ -179,24 +176,32 @@ public static class FindPath
 
 
 
-	public static List<Node> getPathToDestination(Vector3[] navmeshPath, Floor floor)
+	public static List<Node> getPathToDestination(Vector3[] navmeshPath, Floor floor, Floor alternativeFloor)
 	{
 		HashSet<Node> path = new HashSet<Node>();
 
+		Floor ActiveFloor = floor;
 		//Debug.Log($"get path called  navmesh corners are {navmeshPath.Length}");
-
 		for (int i = 0; i < navmeshPath.Length; i++)
 		{
-			Node node = floor.grid.GetNode(navmeshPath[i]);
 
-			if (node.X == 4 && node.Y == 3)
-			{
-				Debug.Log($"{node.isObstacle}");
-			}
-			//Debug.Log($"{node}");
+			Node node = ActiveFloor.grid.GetNode(navmeshPath[i]);
 			if (node == null)
 			{
-				Debug.Log($"node is null");
+				//Node safenode = ActiveFloor.grid.GetSafeNode(navmeshPath[i]);
+
+				//GameObject.Instantiate(ActiveFloor.prefab, safenode.LocalCoord, Quaternion.identity);
+				//if (safenode.RemoteNodes.Count > 0)
+				//{
+				//	Node remoteNode = safenode.RemoteNodes[0];
+				//	path.Add(remoteNode);
+				//	ActiveFloor = alternativeFloor;
+				//	i--;
+				//}
+				//else
+				//{
+				//	Debug.Log($"remote node is empty  and node isEEdge ");
+				//}
 				break;
 			}
 			else
@@ -209,20 +214,23 @@ public static class FindPath
 		}
 		List<Node> result = new List<Node>(path);
 
-		path.Clear();
-		Node prevNode = result[0];
-		for (int i = 1; i < result.Count; i++)
+		if (result.Count > 0)
 		{
-			Node node = result[i];
-			//FindPath.getPathToDestination(prevNode, node));
-			//Debug.Log($" search the path from {prevNode} to  {node}  {getPathToDestination(prevNode, node).Count}");
+			path.Clear();
+			Node prevNode = result[0];
+			for (int i = 1; i < result.Count; i++)
+			{
+				Node node = result[i];
+				//FindPath.getPathToDestination(prevNode, node));
+				//Debug.Log($" search the path from {prevNode} to  {node}  {getPathToDestination(prevNode, node).Count}");
 
-			List<Node> tmp = getPathToDestination(prevNode, node);
+				List<Node> tmp = getPathToDestination(prevNode, node);
 
-			path.UnionWith(tmp);
+				path.UnionWith(tmp);
 
-			prevNode = node;
+				prevNode = node;
 
+			}
 		}
 		return path.ToList();
 	}

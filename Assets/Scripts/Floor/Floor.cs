@@ -1,11 +1,9 @@
 using GridNameSpace;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
 
 public class Floor : MonoBehaviour
 {
-
 	[Tooltip("By changing the scale of the platform we change the Grid Size")]
 	public LayerMask NodelinkLayer;
 	public LayerMask ObstacleLayer;
@@ -15,12 +13,14 @@ public class Floor : MonoBehaviour
 
 	public Transform parentCanvas;
 	public GameObject prefab;
+
 	[HideInInspector]
 	public List<NodeLink> nodeLinks = new List<NodeLink>();
 	private float X = 2;
 	private float Y = 2;
 	public List<Portal> Portals = new List<Portal>();
-	void Awake()
+
+	private void Awake()
 	{
 		X = transform.localScale.x;
 		Y = transform.localScale.z;
@@ -36,12 +36,115 @@ public class Floor : MonoBehaviour
 
 		//Debug.Log($"{grid.nodes.Length}");
 		UpdateNodes();
-		foreach (var item in Portals)
+	}
+	private void Start()
+	{
+		UpdateEdges();
+
+	}
+	private void UpdateEdges()
+	{
+		foreach (Node node in grid.nodes)
 		{
-			//Debug.Log($" enter Portal {item.Enter} exit {item.Exit}");
+			Vector3 origin = Vector3.zero;
+			WallDirection direction = WallDirection.None;
+
+			if (node.X == 0)
+			{
+				node.IsEdgeNode = true;
+
+				direction = WallDirection.Left;
+				origin = node.LocalCoord + Vector3.left;
+				if (Physics.Raycast(origin, Vector3.up * 3, out RaycastHit hit, 5, LayerMask.GetMask(new string[1] { "Floor" })))
+				{
+					Floor leftFloor = hit.transform.GetComponent<Floor>();
+					FloorGrid grid = leftFloor.grid;
+
+					Node node1 = grid.GetNode(hit.point);
+					node.AddNewRemoteNode(node1);
+				}
+
+				if (Physics.Raycast(origin, Vector3.down * 3, out RaycastHit hit2, 5, LayerMask.GetMask(new string[1] { "Floor" })))
+				{
+					Floor leftFloor = hit2.transform.GetComponent<Floor>();
+					FloorGrid grid = leftFloor.grid;
+
+					Node node1 = grid.GetNode(hit2.point);
+					node.AddNewRemoteNode(node1);
+				}
+			}
+			if (node.X == grid.height - 1)
+			{
+				node.IsEdgeNode = true;
+
+				direction = WallDirection.Right;
+				origin = node.LocalCoord + Vector3.right;
+				Gizmos.color = Color.blue;
+
+				if (Physics.Raycast(origin, Vector3.up * 3, out RaycastHit hit, 5, LayerMask.GetMask(new string[1] { "Floor" })))
+				{
+					Floor leftFloor = hit.transform.GetComponent<Floor>();
+					FloorGrid grid = leftFloor.grid;
+					Node node1 = grid.GetNode(hit.point);
+					node.AddNewRemoteNode(node1);
+				}
+				if (Physics.Raycast(origin, Vector3.down * 3, out RaycastHit hit2, 5, LayerMask.GetMask(new string[1] { "Floor" })))
+				{
+					Floor leftFloor = hit2.transform.GetComponent<Floor>();
+					FloorGrid grid = leftFloor.grid;
+
+					Node node1 = grid.GetNode(hit2.point);
+					node.AddNewRemoteNode(node1);
+				}
+			}
+			if (node.Y == 0)
+			{
+				node.IsEdgeNode = true;
+
+				direction = WallDirection.Bottom;
+				origin = node.LocalCoord + Vector3.back;
+
+				if (Physics.Raycast(origin, Vector3.up * 3, out RaycastHit hit, 5, LayerMask.GetMask(new string[1] { "Floor" })))
+				{
+					Floor leftFloor = hit.transform.GetComponent<Floor>();
+					FloorGrid grid = leftFloor.grid;
+
+					Node node1 = grid.GetNode(hit.point);
+					node.AddNewRemoteNode(node1);
+				}
+				if (Physics.Raycast(origin, Vector3.down * 3, out RaycastHit hit2, 5, LayerMask.GetMask(new string[1] { "Floor" })))
+				{
+					Floor leftFloor = hit2.transform.GetComponent<Floor>();
+					FloorGrid grid = leftFloor.grid;
+
+					Node node1 = grid.GetNode(hit2.point);
+					node.AddNewRemoteNode(node1);
+				}
+			}
+			if (node.Y == grid.width - 1)
+			{
+				node.IsEdgeNode = true;
+				direction = WallDirection.Top;
+				origin = node.LocalCoord + Vector3.forward;
+
+				if (Physics.Raycast(origin, Vector3.up * 3, out RaycastHit hit, 5, LayerMask.GetMask(new string[1] { "Floor" })))
+				{
+					Floor leftFloor = hit.transform.GetComponent<Floor>();
+					FloorGrid grid = leftFloor.grid;
+
+					Node node1 = grid.GetNode(hit.point);
+					node.AddNewRemoteNode(node1);
+				}
+				if (Physics.Raycast(origin, Vector3.down * 3, out RaycastHit hit2, 5, LayerMask.GetMask(new string[1] { "Floor" })))
+				{
+					Floor leftFloor = hit2.transform.GetComponent<Floor>();
+					FloorGrid grid = leftFloor.grid;
+
+					Node node1 = grid.GetNode(hit2.point);
+					node.AddNewRemoteNode(node1);
+				}
+			}
 		}
-
-
 	}
 
 	private void OnValidate()
@@ -50,31 +153,12 @@ public class Floor : MonoBehaviour
 		//CheckForLinks();
 	}
 
-	//public void CheckForObstacles()
-	//{
-	//	for (int i = 0; i < grid.height; i++)
-	//	{
-	//		for (int j = 0; j < grid.width; j++)
-	//		{
-	//			Node curentNode = grid.nodes[i, j];
-	//			Collider[] hits = Physics.OverlapSphere(curentNode.LocalCoord + Vector3.up * 0.2f, 0.2f, ObstacleLayer);
-	//			if (hits.Length > 0)
-	//			{
-	//				grid.nodes[i, j].isObstacle = true;
-	//			}
-
-
-
-	//		}
-	//	}
-	//}
-
-
 
 	private bool LayerCheck(Collider collier, LayerMask layerToCHeck)
 	{
 		return ((1 << collier.gameObject.layer) & layerToCHeck.value) != 0; //true
 	}
+
 	public void UpdateNodes()
 	{
 		for (int i = 0; i < grid.height; i++)
@@ -88,7 +172,6 @@ public class Floor : MonoBehaviour
 				//Collider[] hits = Physics.OverlapBox(center, BoxSize, Quaternion.Euler(Vector3.up));
 
 				//RaycastHit[] boxHits = Physics.BoxCastAll(center, BoxSize, transform.up, Quaternion.identity, NodelinkLayer);
-
 
 				foreach (Collider hit in hits)
 				{
@@ -110,7 +193,6 @@ public class Floor : MonoBehaviour
 					{
 						if (hit.CompareTag("Wall"))
 						{
-
 							Vector3 closestPoint = hit.ClosestPoint(grid.nodes[i, j].LocalCoord);
 
 							WallDirection direction = WallDirection.Middle;
@@ -118,8 +200,8 @@ public class Floor : MonoBehaviour
 							float diffX = closestPoint.x - grid.nodes[i, j].LocalCoord.x;
 							float diffY = closestPoint.z - grid.nodes[i, j].LocalCoord.z;
 
-
-							// vertical wall => need to check if it is on the rightor the left
+							// vertical wall => need to check if it is
+							// on the rightor the left
 							if (diffY <= 0.0001)
 							{
 								if (diffX >= diffY)
@@ -131,7 +213,8 @@ public class Floor : MonoBehaviour
 									direction = WallDirection.Left;
 								}
 							}
-							// horizental wall => need to chekc if it it on top or botom
+							// horizental wall => need to chekc if it it
+							// on top or botom
 							else if (diffX <= 0.0001)
 							{
 								if (diffX >= diffY)
@@ -145,11 +228,9 @@ public class Floor : MonoBehaviour
 							}
 
 							grid.nodes[i, j].NotifieNeighborsWithSomeRestriction(direction);
-
 						}
 						else // not a wall
 						{
-
 							grid.nodes[i, j].isObstacle = true;
 						}
 					}
@@ -163,8 +244,6 @@ public class Floor : MonoBehaviour
 							Portals.Add(portal);
 						}
 					}
-
-
 				}
 			}
 		}
@@ -173,18 +252,15 @@ public class Floor : MonoBehaviour
 	private void AddNodeLink(NodeLink nodeLink)
 	{
 		nodeLinks.Add(nodeLink);
-
 	}
 
-	void Update()
+	private void Update()
 	{
-		//if (grid == null || grid.nodes == null) return;
+		if (grid == null || grid.nodes == null) return;
 
 		grid.Reset();
 		UpdateNodes();
 	}
-
-
 
 	//public async void OnValidate()
 	//{
@@ -192,22 +268,27 @@ public class Floor : MonoBehaviour
 	//	await drawGrid();
 	//}
 
-
-
 	public override string ToString()
 	{
 		return $" {transform.name}";
 	}
 
-	private async void OnDrawGizmos()
+
+
+	private void OnCollisionEnter(Collision collision)
 	{
 
+	}
 
+	public bool Once;
+
+
+
+	private void OnDrawGizmos()
+	{
 		X = (int)transform.localScale.x;
 		Y = (int)transform.localScale.z;
 		Vector3 buttonLeft = transform.position - (Vector3.right * X) / 2 - (Vector3.forward * Y) / 2;
-
-
 
 		buttonLeft += new Vector3(0, transform.localScale.y / 2, 0);
 		Debug.DrawLine(buttonLeft, buttonLeft + Vector3.up * 2, Color.yellow);
@@ -221,26 +302,91 @@ public class Floor : MonoBehaviour
 			Debug.DrawLine(buttonLeft + new Vector3(x, 0, 0), new Vector3(x + buttonLeft.x, buttonLeft.y, (Y + buttonLeft.z)), Color.black);
 		}
 
+		if (Once)
+		{
+			Awake();
+			Once = false;
+		}
+
 		if (grid == null || grid.nodes == null) return;
 
+		drawGrid();
 
-		await drawGrid();
+		WallDirection direction = WallDirection.None;
+		//foreach (Node node in grid.nodes)
+		//{
+		//	Vector3 origin = Vector3.zero;
+		//	if (node.X == 0)
+		//	{
+		//		node.IsEdgeNode = true;
 
+		// direction = WallDirection.Left; origin = node.LocalCoord + Vector3.left;
+		// Gizmos.DrawLine(origin, origin + Vector3.up * 3); Gizmos.DrawLine(origin, origin
+		// + Vector3.down * 3); if (Physics.Raycast(origin, Vector3.up * 3, out RaycastHit
+		// hit, 5, LayerMask.GetMask(new string[1] { "Floor" }))) { Floor leftFloor =
+		// hit.transform.GetComponent<Floor>(); FloorGrid grid = leftFloor.grid;
 
+		// Node node1 = grid.GetNode(hit.point); node.AddNewRemoteNode(node1); }
+
+		// if (Physics.Raycast(origin, Vector3.down * 3, out RaycastHit hit2, 5,
+		// LayerMask.GetMask(new string[1] { "Floor" }))) { Floor leftFloor =
+		// hit2.transform.GetComponent<Floor>(); FloorGrid grid = leftFloor.grid;
+
+		// Node node1 = grid.GetNode(hit2.point); node.AddNewRemoteNode(node1); } } if
+		// (node.X == grid.height - 1) { node.IsEdgeNode = true;
+
+		// direction = WallDirection.Right; origin = node.LocalCoord + Vector3.right;
+		// Gizmos.color = Color.blue;
+
+		// Gizmos.DrawLine(origin, origin + Vector3.up * 3); Gizmos.DrawLine(origin, origin
+		// + Vector3.down * 3); if (Physics.Raycast(origin, Vector3.up * 3, out RaycastHit
+		// hit, 5, LayerMask.GetMask(new string[1] { "Floor" }))) { Floor leftFloor =
+		// hit.transform.GetComponent<Floor>(); FloorGrid grid = leftFloor.grid;
+
+		// Node node1 = grid.GetNode(hit.point); node.AddNewRemoteNode(node1); } if
+		// (Physics.Raycast(origin, Vector3.down * 3, out RaycastHit hit2, 5,
+		// LayerMask.GetMask(new string[1] { "Floor" }))) { Floor leftFloor =
+		// hit2.transform.GetComponent<Floor>(); FloorGrid grid = leftFloor.grid;
+
+		// Node node1 = grid.GetNode(hit2.point); node.AddNewRemoteNode(node1); } } if
+		// (node.Y == 0) { node.IsEdgeNode = true;
+
+		// direction = WallDirection.Bottom; origin = node.LocalCoord + Vector3.back;
+		// Gizmos.DrawLine(origin, origin + Vector3.up * 3); Gizmos.DrawLine(origin, origin
+		// + Vector3.down * 3); if (Physics.Raycast(origin, Vector3.up * 3, out RaycastHit
+		// hit, 5, LayerMask.GetMask(new string[1] { "Floor" }))) { Floor leftFloor =
+		// hit.transform.GetComponent<Floor>(); FloorGrid grid = leftFloor.grid;
+
+		// Node node1 = grid.GetNode(hit.point); node.AddNewRemoteNode(node1); } if
+		// (Physics.Raycast(origin, Vector3.down * 3, out RaycastHit hit2, 5,
+		// LayerMask.GetMask(new string[1] { "Floor" }))) { Floor leftFloor =
+		// hit2.transform.GetComponent<Floor>(); FloorGrid grid = leftFloor.grid;
+
+		// Node node1 = grid.GetNode(hit2.point); node.AddNewRemoteNode(node1); } } if
+		// (node.Y == grid.width - 1) { node.IsEdgeNode = true; direction =
+		// WallDirection.Top; origin = node.LocalCoord + Vector3.forward;
+		// Gizmos.DrawLine(origin, origin + Vector3.up * 3); Gizmos.DrawLine(origin, origin
+		// + Vector3.down * 3); if (Physics.Raycast(origin, Vector3.up * 3, out RaycastHit
+		// hit, 5, LayerMask.GetMask(new string[1] { "Floor" }))) { Floor leftFloor =
+		// hit.transform.GetComponent<Floor>(); FloorGrid grid = leftFloor.grid;
+
+		// Node node1 = grid.GetNode(hit.point); node.AddNewRemoteNode(node1); } if
+		// (Physics.Raycast(origin, Vector3.down * 3, out RaycastHit hit2, 5,
+		// LayerMask.GetMask(new string[1] { "Floor" }))) { Floor leftFloor =
+		// hit2.transform.GetComponent<Floor>(); FloorGrid grid = leftFloor.grid;
+
+		// Node node1 = grid.GetNode(hit2.point); node.AddNewRemoteNode(node1); Gizmos.color
+		// = Color.black; Gizmos.DrawSphere(node1.LocalCoord + Vector3.up * 0.5f, 0.4f); } }
 	}
 
-	private Task drawGrid()
+	private void drawGrid()
 	{
-
-
-
 		//foreach (Node node in grid.nodes)
 		//{
 		//	Debug.DrawLine(node.WordCoord, node.WordCoord + Vector3.up, Color.red);
 		//}
 
 		Vector3 offset = new Vector3(0, 0.2f, 0);
-
 
 		for (int i = 0; i < grid.height; i++)
 		{
@@ -271,23 +417,12 @@ public class Floor : MonoBehaviour
 				//	Gizmos.color = Color.black;
 				//	Gizmos.DrawSphere(grid.nodes[i, j].LocalCoord + Vector3.up * 0.7f, 0.25f);
 				//}
-
-
-
-
 			}
 		}
-
-		return Task.Delay(500);
-
-
-
-
 	}
 }
 
-
 public enum WallDirection
 {
-	Right, Left, Top, Bottom, Middle
+	None, Right, Left, Top, Bottom, Middle
 }
