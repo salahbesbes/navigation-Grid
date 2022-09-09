@@ -39,63 +39,51 @@ public class Floor : MonoBehaviour
         }
         private void Start()
         {
-                //UpdateEdges();
+                UpdateEdges();
 
         }
         private void UpdateEdges()
         {
                 foreach (Node node in grid.nodes)
                 {
-                        Vector3 origin = node.LocalCoord + Vector3.down;
                         if (node.X == 0)
                         {
-                                origin += Vector3.left + Vector3.down;
-                                if (Physics.Raycast(origin, Vector3.up * 1.5f, out RaycastHit hit, 5f, LayerMask.GetMask(new string[1] { "Floor" })))
-                                {
-                                        Floor leftFloor = hit.transform.GetComponent<Floor>();
-                                        if (leftFloor == null) return;
-                                        FloorGrid grid = leftFloor.grid;
+                                Vector3 origin = node.LocalCoord + Vector3.left + Vector3.down * 1.5f;
 
-                                        Node node1 = grid.GetNode(hit.point);
-                                        node.AddNewRemoteNode(node1);
-
-                                }
-
-                        }
-
-                        if (node.Y == grid.width - 1)
-                        {
-                                origin += Vector3.forward + Vector3.down;
                                 if (Physics.Raycast(origin, Vector3.up * 1.5f, out RaycastHit hit, 1.5f, LayerMask.GetMask(new string[1] { "Floor" })))
                                 {
                                         Floor leftFloor = hit.transform.GetComponent<Floor>();
                                         if (leftFloor == null) return;
-                                        FloorGrid grid = leftFloor.grid;
+                                        FloorGrid newGrid = leftFloor.grid;
 
-                                        Node node1 = grid.GetNode(hit.point);
+                                        Node node1 = newGrid.GetNode(hit.point);
                                         node.AddNewRemoteNode(node1);
 
-                                }
-                        }
-
-                        if (node.X == grid.height - 1)
-                        {
-                                origin += Vector3.right + Vector3.down;
-                                if (Physics.Raycast(origin, Vector3.up * 1.5f, out RaycastHit hit, 1.5f, LayerMask.GetMask(new string[1] { "Floor" })))
-                                {
-                                        Floor leftFloor = hit.transform.GetComponent<Floor>();
-                                        if (leftFloor == null) return;
-                                        FloorGrid grid = leftFloor.grid;
-
-                                        Node node1 = grid.GetNode(hit.point);
-                                        node.AddNewRemoteNode(node1);
 
                                 }
+
                         }
 
                         if (node.Y == 0)
                         {
-                                origin += Vector3.back + Vector3.down;
+                                Vector3 origin = node.LocalCoord + Vector3.back + Vector3.down * 1.5f;
+
+                                if (Physics.Raycast(origin, Vector3.up * 1.5f, out RaycastHit hit, 1.5f, LayerMask.GetMask(new string[1] { "Floor" })))
+                                {
+                                        Floor leftFloor = hit.transform.GetComponent<Floor>();
+                                        if (leftFloor == null) return;
+                                        FloorGrid grid = leftFloor.grid;
+
+                                        Node node1 = grid.GetNode(hit.point);
+                                        node.AddNewRemoteNode(node1);
+                                }
+                        }
+
+
+                        if (node.X == grid.height - 1)
+                        {
+                                Vector3 origin = node.LocalCoord + Vector3.right + Vector3.down * 1.5f;
+
                                 if (Physics.Raycast(origin, Vector3.up * 1.5f, out RaycastHit hit, 1.5f, LayerMask.GetMask(new string[1] { "Floor" })))
                                 {
                                         Floor leftFloor = hit.transform.GetComponent<Floor>();
@@ -108,12 +96,18 @@ public class Floor : MonoBehaviour
                                 }
                         }
 
-                        if (node.X == 0 && node.Y == grid.width - 1)
+                        if (node.Y == grid.width - 1)
                         {
-                                Debug.Log($" {node} {node.RemoteNodes.Count}");
-                                foreach (var item in node.RemoteNodes)
+                                Vector3 origin = node.LocalCoord + Vector3.forward + Vector3.down * 1.5f;
+
+                                if (Physics.Raycast(origin, Vector3.up * 1.5f, out RaycastHit hit, 1.5f, LayerMask.GetMask(new string[1] { "Floor" })))
                                 {
-                                        Debug.Log($"{item}");
+                                        Floor leftFloor = hit.transform.GetComponent<Floor>();
+                                        if (leftFloor == null) return;
+                                        FloorGrid grid = leftFloor.grid;
+
+                                        Node node1 = grid.GetNode(hit.point);
+                                        node.AddNewRemoteNode(node1);
                                 }
                         }
                 }
@@ -288,10 +282,34 @@ public class Floor : MonoBehaviour
                 WallDirection direction = WallDirection.None;
                 foreach (Node node in grid.nodes)
                 {
-                        Vector3 origin = node.LocalCoord + Vector3.down;
                         if (node.X == 0)
                         {
-                                origin += Vector3.left + Vector3.down;
+                                Vector3 origin = node.LocalCoord + Vector3.left + Vector3.down * 1.5f;
+                                Gizmos.color = Color.blue;
+                                Gizmos.DrawSphere(origin, 0.3f);
+
+                                if (Physics.Raycast(origin, Vector3.up * 1.5f, out RaycastHit hit, 1.5f, LayerMask.GetMask(new string[1] { "Floor" })))
+                                {
+                                        Floor leftFloor = hit.transform.GetComponent<Floor>();
+                                        if (leftFloor == null) return;
+                                        FloorGrid newGrid = leftFloor.grid;
+
+                                        Node node1 = newGrid.GetNode(hit.point);
+                                        node.AddNewRemoteNode(node1);
+                                        Gizmos.color = Color.black;
+                                        Gizmos.DrawSphere(node1.LocalCoord, 0.3f);
+
+
+                                }
+
+                        }
+
+                        if (node.Y == 0)
+                        {
+                                Vector3 origin = node.LocalCoord + Vector3.back + Vector3.down * 1.5f;
+                                Gizmos.color = Color.red;
+                                Gizmos.DrawSphere(origin, 0.3f);
+
                                 if (Physics.Raycast(origin, Vector3.up * 1.5f, out RaycastHit hit, 1.5f, LayerMask.GetMask(new string[1] { "Floor" })))
                                 {
                                         Floor leftFloor = hit.transform.GetComponent<Floor>();
@@ -300,16 +318,36 @@ public class Floor : MonoBehaviour
 
                                         Node node1 = grid.GetNode(hit.point);
                                         node.AddNewRemoteNode(node1);
-                                        Gizmos.color = Color.black;
+                                        Gizmos.DrawSphere(node1.LocalCoord, 0.3f);
+                                }
+                        }
+
+
+                        if (node.X == grid.height - 1)
+                        {
+                                Vector3 origin = node.LocalCoord + Vector3.right + Vector3.down * 1.5f;
+                                Gizmos.color = Color.magenta;
+                                Gizmos.DrawSphere(origin, 0.3f);
+
+                                if (Physics.Raycast(origin, Vector3.up * 1.5f, out RaycastHit hit, 1.5f, LayerMask.GetMask(new string[1] { "Floor" })))
+                                {
+                                        Floor leftFloor = hit.transform.GetComponent<Floor>();
+                                        if (leftFloor == null) return;
+                                        FloorGrid grid = leftFloor.grid;
+
+                                        Node node1 = grid.GetNode(hit.point);
+                                        node.AddNewRemoteNode(node1);
                                         Gizmos.DrawSphere(node1.LocalCoord, 0.25f);
 
                                 }
-
                         }
 
                         if (node.Y == grid.width - 1)
                         {
-                                origin += Vector3.forward + Vector3.down;
+                                Vector3 origin = node.LocalCoord + Vector3.forward + Vector3.down * 1.5f;
+                                Gizmos.color = Color.black;
+                                Gizmos.DrawSphere(origin, 0.3f);
+
                                 if (Physics.Raycast(origin, Vector3.up * 1.5f, out RaycastHit hit, 1.5f, LayerMask.GetMask(new string[1] { "Floor" })))
                                 {
                                         Floor leftFloor = hit.transform.GetComponent<Floor>();
@@ -320,49 +358,8 @@ public class Floor : MonoBehaviour
                                         node.AddNewRemoteNode(node1);
                                         Gizmos.DrawSphere(node1.LocalCoord, 0.25f);
 
-
                                 }
                         }
-
-                        //if (node.X == grid.height - 1)
-                        //{
-                        //        Gizmos.DrawSphere(origin, 0.25f);
-                        //        origin += Vector3.right + Vector3.down;
-                        //        Gizmos.DrawSphere(origin, 0.25f);
-                        //        Gizmos.color = Color.magenta;
-                        //        if (Physics.Raycast(origin, Vector3.up * 1.5f, out RaycastHit hit, 1.5f, LayerMask.GetMask(new string[1] { "Floor" })))
-                        //        {
-                        //                Floor leftFloor = hit.transform.GetComponent<Floor>();
-                        //                if (leftFloor == null) return;
-                        //                FloorGrid grid = leftFloor.grid;
-
-                        //                Node node1 = grid.GetNode(hit.point);
-                        //                node.AddNewRemoteNode(node1);
-                        //                Gizmos.color = Color.black;
-                        //                Gizmos.DrawSphere(node1.LocalCoord, 0.25f);
-
-                        //        }
-                        //}
-
-                        //if (node.Y == 0)
-                        //{
-                        //        Gizmos.DrawSphere(origin, 0.25f);
-                        //        origin += Vector3.back + Vector3.down;
-                        //        Gizmos.DrawSphere(origin, 0.25f);
-                        //        Gizmos.color = Color.cyan;
-                        //        if (Physics.Raycast(origin, Vector3.up * 1.5f, out RaycastHit hit, 1.5f, LayerMask.GetMask(new string[1] { "Floor" })))
-                        //        {
-                        //                Floor leftFloor = hit.transform.GetComponent<Floor>();
-                        //                if (leftFloor == null) return;
-                        //                FloorGrid grid = leftFloor.grid;
-
-                        //                Node node1 = grid.GetNode(hit.point);
-                        //                node.AddNewRemoteNode(node1);
-                        //                Gizmos.color = Color.black;
-                        //                Gizmos.DrawSphere(node1.LocalCoord, 0.25f);
-
-                        //        }
-                        //}
                 }
 
 

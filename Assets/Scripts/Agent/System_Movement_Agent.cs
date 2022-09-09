@@ -48,12 +48,10 @@ public class System_Movement_Agent : System_Movement
                         Floor newFloor = GetFloorPressed();
                         bool newFloorIsAdjacent = false;
                         newFloorIsAdjacent = CheckIfNewFloorClickedIsAdjacent(newFloor);
-                        Debug.Log($"{ActiveFloor} is adjacent new {newFloor} {newFloorIsAdjacent}");
+
                         if (newFloor != ActiveFloor)
                         {
                                 pressedOnDifferentFloor = true;
-
-
                         }
                         else
                         {
@@ -65,7 +63,7 @@ public class System_Movement_Agent : System_Movement
                                 newFloor.grid.GetNodeCoord(newFloor, FloorLayer, out destinationX, out destinationY);
                                 FinalDestination = newFloor.grid.GetNode(destinationX, destinationY);
 
-
+                                Debug.Log($"{ActiveFloor} is adjacent new {newFloor} {newFloorIsAdjacent}");
                                 if (newFloorIsAdjacent == false)
                                 {
 
@@ -78,6 +76,12 @@ public class System_Movement_Agent : System_Movement
                                                 StopCoroutine("Move");
                                                 //Debug.Log($"dest [x{destinationX}, y{destinationY}]");
                                                 ActiveNodeLink = ClosestNodeLinkAvailable(newFloor);
+
+                                                if (ActiveNodeLink == null)
+                                                {
+                                                        Debug.Log($" we cant move their is not way to cross ");
+                                                        return;
+                                                }
                                                 Node destination = ActiveNodeLink.node;
                                                 if (CurentPositon == destination)
                                                 {
@@ -91,7 +95,6 @@ public class System_Movement_Agent : System_Movement
                                 }
                                 else
                                 {
-
                                         Node ClosetsEdgeNode = ActiveFloor.grid.GetSafeNode(FinalDestination.LocalCoord);
 
                                         MoveBetweenTwoAdjacentPlatforms(ClosetsEdgeNode, FinalDestination);
